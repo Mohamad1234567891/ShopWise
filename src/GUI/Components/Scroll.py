@@ -3,23 +3,34 @@ from PySide6.QtCore import Qt
 
 
 class ScrollContainer(QScrollArea):
-    def __init__(self, columns=6, parent=None):
+    def __init__(self, columns=3, parent=None):
         super().__init__(parent)
 
         self.columns = columns
         self.item_count = 0
 
-        self.setWidgetResizable(True)
-        self.setFrameShape(QFrame.NoFrame)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.setWidgetResizable(True)
+        self.setFrameShape(QFrame.NoFrame)
+        self.setAlignment(Qt.AlignHCenter)
+
+        self.setStyleSheet("""
+            QScrollArea {
+                background: transparent;
+                border: none;
+            }
+        """)
 
         self.content_widget = QWidget()
-        self.content_layout = QGridLayout(self.content_widget)
-        self.content_layout.setSpacing(15)
-        self.content_layout.setSizeConstraint(QGridLayout.SetMinAndMaxSize)
+        self.content_widget.setMaximumWidth(1020)
+        self.content_widget.setStyleSheet("background: transparent;")
 
-        # جعل كل الأعمدة (من 0 إلى 5) تتمدد بالتساوي لتغطي كامل العرض
+        self.content_layout = QGridLayout(self.content_widget)
+        self.content_layout.setSpacing(25)
+        self.content_layout.setContentsMargins(10, 10, 10, 10)
+        self.content_layout.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
+
         for c in range(self.columns):
             self.content_layout.setColumnStretch(c, 1)
 
@@ -27,14 +38,11 @@ class ScrollContainer(QScrollArea):
 
     def add_item(self, widget, row=None, col=None):
         if row is not None and col is not None:
-            self.content_layout.addWidget(widget, row, col)
-            for r in range(row + 1):
-                self.content_layout.setRowMinimumHeight(r, 50)
+            self.content_layout.addWidget(widget, row, col, alignment=Qt.AlignCenter)
             return
 
         auto_row = self.item_count // self.columns
         auto_col = self.item_count % self.columns
 
-        self.content_layout.addWidget(widget, auto_row, auto_col)
-        self.content_layout.setRowMinimumHeight(auto_row, 50)
+        self.content_layout.addWidget(widget, auto_row, auto_col, alignment=Qt.AlignCenter)
         self.item_count += 1

@@ -9,13 +9,12 @@ class SearchBar(QWidget):
     text_changed = Signal(str)
     search_submitted = Signal(str)
 
-
     def __init__(self, suggestions=None, parent=None):
         super().__init__(parent)
         self.setFixedHeight(50)
-        self.setMaximumWidth(550)
+        self.setMinimumWidth(450)
+        self.setMaximumWidth(850)
 
-        # هذا السطر ضروري جداً ليظهر اللون الأبيض والحدود الدائرية للـ QWidget:
         self.setAttribute(Qt.WA_StyledBackground, True)
 
         self.setStyleSheet("""
@@ -30,12 +29,12 @@ class SearchBar(QWidget):
         layout.setContentsMargins(16, 4, 6, 4)
         layout.setSpacing(10)
 
-        # أيقونة البحث
+
         icon_label = QLabel("🔍")
         icon_label.setStyleSheet("font-size: 15px; border: none; background: transparent;")
         layout.addWidget(icon_label)
 
-        # حقل الإدخال
+
         self.input_field = QLineEdit()
         self.input_field.setPlaceholderText("Search for a product (e.g. Samsung Galaxy S25)...")
         self.input_field.setStyleSheet("""
@@ -51,7 +50,7 @@ class SearchBar(QWidget):
         if suggestions:
             self.set_suggestions(suggestions)
 
-        # زر البحث الأزرق
+
         self.search_btn = QPushButton("Search")
         self.search_btn.setFixedSize(92, 40)
         self.search_btn.setCursor(QCursor(Qt.PointingHandCursor))
