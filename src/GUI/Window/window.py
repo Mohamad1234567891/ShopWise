@@ -73,6 +73,7 @@ card3 = ProductCard(
 )
 
 
+
 window.scroll_container.add_item(card1, row=0, col=0)
 window.scroll_container.add_item(card2, row=0, col=1)
 window.scroll_container.add_item(card3, row=0, col=2)
