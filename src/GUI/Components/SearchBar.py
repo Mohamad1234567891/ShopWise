@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (
-    QWidget, QHBoxLayout, QLineEdit, QPushButton, QLabel, QCompleter
+    QWidget, QHBoxLayout, QLineEdit, QPushButton, QLabel, QCompleter, QSizePolicy
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QCursor
@@ -11,10 +11,12 @@ class SearchBar(QWidget):
 
     def __init__(self, suggestions=None, parent=None):
         super().__init__(parent)
-        self.setFixedHeight(50)
-        self.setMinimumWidth(450)
-        self.setMaximumWidth(850)
 
+        self.setFixedHeight(50)
+        self.setMinimumWidth(240)    # Shrinks smoothly on small screens
+        self.setMaximumWidth(16777215) # Removes the upper limit completely
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setAttribute(Qt.WA_StyledBackground, True)
 
         self.setStyleSheet("""
@@ -29,13 +31,15 @@ class SearchBar(QWidget):
         layout.setContentsMargins(16, 4, 6, 4)
         layout.setSpacing(10)
 
-
+        # Search icon
         icon_label = QLabel("🔍")
-        icon_label.setStyleSheet("font-size: 15px; border: none; background: transparent;")
+        icon_label.setStyleSheet("font-size: 14px; border: none; background: transparent;")
         layout.addWidget(icon_label)
 
-
+        # Text input
         self.input_field = QLineEdit()
+        self.input_field.setMinimumWidth(80)
+        self.input_field.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.input_field.setPlaceholderText("Search for a product (e.g. Samsung Galaxy S25)...")
         self.input_field.setStyleSheet("""
             QLineEdit {
@@ -50,17 +54,17 @@ class SearchBar(QWidget):
         if suggestions:
             self.set_suggestions(suggestions)
 
-
+        # Search button
         self.search_btn = QPushButton("Search")
-        self.search_btn.setFixedSize(92, 40)
+        self.search_btn.setFixedSize(90, 38)
         self.search_btn.setCursor(QCursor(Qt.PointingHandCursor))
         self.search_btn.setStyleSheet("""
             QPushButton {
                 background-color: #1e3a5f;
                 color: #ffffff;
-                font-size: 14px;
+                font-size: 13px;
                 font-weight: 600;
-                border-radius: 20px;
+                border-radius: 19px;
                 border: none;
             }
             QPushButton:hover {

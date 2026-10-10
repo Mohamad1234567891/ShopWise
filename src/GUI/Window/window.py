@@ -14,6 +14,7 @@ class Window(QMainWindow):
         super().__init__()
         self.setWindowTitle("ShopWise")
         self.resize(850, 650)
+        self.setMinimumSize(345, 560)
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -22,17 +23,16 @@ class Window(QMainWindow):
         self.layout.setContentsMargins(30, 20, 30, 20)
         self.layout.setSpacing(15)
 
-
+        # مساحة اللوجو
         self.logo_space = QWidget()
-        self.logo_space.setFixedHeight(70)
+        self.logo_space.setFixedHeight(30)
         self.layout.addWidget(self.logo_space)
 
-
+        # شريط البحث
         suggestions = ["Samsung Galaxy S25 256GB", "Apple iPhone 16", "Google Pixel 9"]
         self.search_bar = SearchBar(suggestions=suggestions)
         self.layout.addWidget(self.search_bar, alignment=Qt.AlignCenter)
         self.search_bar.search_submitted.connect(self.on_search)
-
 
         self.scroll_container = ScrollContainer()
         self.layout.addWidget(self.scroll_container)
@@ -54,7 +54,7 @@ card1 = ProductCard(
     button_url="https://www.amazon.com"
 )
 card2 = ProductCard(
-    store_name="hepseburda",
+    store_name="Hepsiburada",
     product_name="Samsung Galaxy S25 256GB - Phantom Black",
     image_url="https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=400",
     price="₺41,430",
@@ -63,7 +63,34 @@ card2 = ProductCard(
     button_url="https://www.amazon.com"
 )
 card3 = ProductCard(
-    store_name="Trandyol",
+    store_name="Trendyol",
+    product_name="Samsung Galaxy S25 256GB - Phantom Black",
+    image_url="https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=400",
+    price="₺40,100",
+    rating=4.0,
+    button_text="View Offer",
+    button_url="https://www.amazon.com"
+)
+card4 = ProductCard(
+    store_name="Trendyol",
+    product_name="Samsung Galaxy S25 256GB - Phantom Black",
+    image_url="https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=400",
+    price="₺40,100",
+    rating=4.0,
+    button_text="View Offer",
+    button_url="https://www.amazon.com"
+)
+card5 = ProductCard(
+    store_name="Trendyol",
+    product_name="Samsung Galaxy S25 256GB - Phantom Black",
+    image_url="https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=400",
+    price="₺40,100",
+    rating=4.0,
+    button_text="View Offer",
+    button_url="https://www.amazon.com"
+)
+card6 = ProductCard(
+    store_name="Trendyol",
     product_name="Samsung Galaxy S25 256GB - Phantom Black",
     image_url="https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=400",
     price="₺40,100",
@@ -72,23 +99,12 @@ card3 = ProductCard(
     button_url="https://www.amazon.com"
 )
 
-
-
-window.scroll_container.add_item(card1, row=0, col=0)
-window.scroll_container.add_item(card2, row=0, col=1)
-window.scroll_container.add_item(card3, row=0, col=2)
-
-
-googleButton = Button.Button("Google", "https://www.google.com")
-youtubeButton = Button.Button("Youtube", "https://www.youtube.com")
-githubButton = Button.Button("Github", "https://www.github.com")
-
-#window.scroll_container.add_item(googleButton, row=1, col=0)
-#window.scroll_container.add_item(youtubeButton, row=1, col=1)
-#window.scroll_container.add_item(githubButton, row=1, col=2)
-
-#deepButton = Button.Button("Down Button", "https://www.google.com")
-#window.scroll_container.add_item(deepButton, row=5, col=0)
+window.scroll_container.add_item(card1)
+window.scroll_container.add_item(card2)
+window.scroll_container.add_item(card3)
+window.scroll_container.add_item(card4)
+window.scroll_container.add_item(card5)
+window.scroll_container.add_item(card6)
 
 window.show()
 sys.exit(app.exec())

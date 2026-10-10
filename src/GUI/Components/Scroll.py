@@ -3,17 +3,16 @@ from PySide6.QtCore import Qt
 
 
 class ScrollContainer(QScrollArea):
-    def __init__(self, columns=3, parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.columns = columns
-        self.item_count = 0
+        self.card_width = 280
+        self.items = []
 
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.setWidgetResizable(True)
         self.setFrameShape(QFrame.NoFrame)
-        self.setAlignment(Qt.AlignHCenter)
 
         self.setStyleSheet("""
             QScrollArea {
@@ -23,26 +22,44 @@ class ScrollContainer(QScrollArea):
         """)
 
         self.content_widget = QWidget()
-        self.content_widget.setMaximumWidth(1020)
         self.content_widget.setStyleSheet("background: transparent;")
 
         self.content_layout = QGridLayout(self.content_widget)
-        self.content_layout.setSpacing(25)
-        self.content_layout.setContentsMargins(10, 10, 10, 10)
+        self.content_layout.setSpacing(20)
+        self.content_layout.setContentsMargins(10, 10, 24, 10)
         self.content_layout.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
-
-        for c in range(self.columns):
-            self.content_layout.setColumnStretch(c, 1)
 
         self.setWidget(self.content_widget)
 
-    def add_item(self, widget, row=None, col=None):
-        if row is not None and col is not None:
-            self.content_layout.addWidget(widget, row, col, alignment=Qt.AlignCenter)
+    def add_item(self, widget):
+        self.items.append(widget)
+        self._rebuild_grid()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._rebuild_grid()
+
+    def _rebuild_grid(self):
+        if not self.items:
             return
 
-        auto_row = self.item_count // self.columns
-        auto_col = self.item_count % self.columns
+        available_width = self.viewport().width() - 40
+        if available_width <= 0:
+            return
 
-        self.content_layout.addWidget(widget, auto_row, auto_col, alignment=Qt.AlignCenter)
-        self.item_count += 1
+
+        columns = max(1, available_width // self.card_width)
+
+
+        for i in range(self.content_layout.count()):
+            item = self.content_layout.takeAt(0)
+
+
+        for c in range(columns):
+            self.content_layout.setColumnStretch(c, 1)
+
+
+        for index, widget in enumerate(self.items):
+            row = index // columns
+            col = index % columns
+            self.content_layout.addWidget(widget, row, col, alignment=Qt.AlignCenter)
