@@ -1,6 +1,6 @@
 import sys
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout
 )
 from PySide6.QtCore import Qt
 from src.GUI.Components import Button
@@ -20,18 +20,28 @@ class Window(QMainWindow):
         self.setCentralWidget(central_widget)
 
         self.layout = QVBoxLayout(central_widget)
-        self.layout.setContentsMargins(30, 20, 30, 20)
+        self.layout.setContentsMargins(20, 20, 30, 20)
         self.layout.setSpacing(15)
 
-        # مساحة اللوجو
+        # logo area
         self.logo_space = QWidget()
         self.logo_space.setFixedHeight(30)
         self.layout.addWidget(self.logo_space)
 
-        # شريط البحث
+        # make the search bar in senter
+        search_row = QHBoxLayout()
+        search_row.setContentsMargins(0, 0, 0, 0)
+        #history for search
         suggestions = ["Samsung Galaxy S25 256GB", "Apple iPhone 16", "Google Pixel 9"]
         self.search_bar = SearchBar(suggestions=suggestions)
-        self.layout.addWidget(self.search_bar, alignment=Qt.AlignCenter)
+
+        self.search_bar.setMaximumWidth(700)
+
+        search_row.addStretch()
+        search_row.addWidget(self.search_bar)
+        search_row.addStretch()
+
+        self.layout.addLayout(search_row)
         self.search_bar.search_submitted.connect(self.on_search)
 
         self.scroll_container = ScrollContainer()
@@ -53,7 +63,6 @@ card1 = ProductCard(
     button_text="View Offer",
     button_url="https://www.amazon.com",
     color="blue"
-
 )
 card2 = ProductCard(
     store_name="Hepsiburada",

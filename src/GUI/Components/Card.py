@@ -8,40 +8,40 @@ from src.GUI.Components.Button import Button
 
 
 class ProductCard(QWidget):
-    # إعدادات الألوان الصريحة للخلفية، الحدود، والتوهج
+    #
     COLOR_MAP = {
-        # 1. ذهبي: للأفضل في كل شيء
+        # the gold color of card
         "gold": {
-            "bg": "#fef08a",                   # خلفية صفراء ذهبية واضحة
-            "border": "#eab308",               # إطار ذهبي
-            "glow": QColor(234, 179, 8, 220),  # توهج بلور ذهبي
-            "text": "#0f172a",                 # لون النص
+            "bg": "#fef08a",
+            "border": "#eab308",
+            "glow": QColor(234, 179, 8, 220),
+            "text": "#0f172a",
             "badge_bg": "#ca8a04",
             "badge_color": "#ffffff"
         },
-        # 2. أزرق: لأفضل قيمة مقابل السعر
+        # the blue color of card
         "blue": {
-            "bg": "#bfdbfe",                   # خلفية زرقاء واضحة
-            "border": "#2563eb",               # إطار أزرق
-            "glow": QColor(37, 99, 235, 220),  # توهج بلور أزرق
-            "text": "#0f172a",                 # لون النص
+            "bg": "#bfdbfe",
+            "border": "#2563eb",
+            "glow": QColor(37, 99, 235, 220),
+            "text": "#0f172a",
             "badge_bg": "#1d4ed8",
             "badge_color": "#ffffff"
         },
-        # 3. أحمر: لأسوأ تقييم وسعر مرتفع
+        # the red color of card
         "red": {
-            "bg": "#fecaca",                   # خلفية حمراء واضحة
-            "border": "#ef4444",               # إطار أحمر ناصع
-            "glow": QColor(239, 68, 68, 220),  # توهج بلور أحمر
-            "text": "#0f172a",                 # لون النص
+            "bg": "#fecaca",
+            "border": "#ef4444",
+            "glow": QColor(239, 68, 68, 220),
+            "text": "#0f172a",
             "badge_bg": "#dc2626",
             "badge_color": "#ffffff"
         },
-        # 4. أبيض: للكروت العادية
+        # the color of wight card and style
         "white": {
-            "bg": "#ffffff",                   # خلفية بيضاء
-            "border": "#e2e8f0",               # إطار رمادي ناعم
-            "glow": QColor(241, 245, 249, 180),# توهج أبيض/فضي هادئ
+            "bg": "#ffffff",
+            "border": "#e2e8f0",
+            "glow": QColor(241, 245, 249, 180),
             "text": "#0f172a",
             "badge_bg": "#1e3a5f",
             "badge_color": "#fbbf24"
@@ -70,7 +70,7 @@ class ProductCard(QWidget):
 
         choice = color.strip().lower()
         self.theme = self.COLOR_MAP.get(choice, self.COLOR_MAP["white"])
-
+        #size
         self.setFixedHeight(380)
         self.setMinimumWidth(260)
         self.setMaximumWidth(340)
@@ -78,7 +78,7 @@ class ProductCard(QWidget):
 
         self._apply_idle_style()
 
-        # تأثير البلور اللامع بلون الكارد
+        # add blure to cards
         self.glow_effect = QGraphicsDropShadowEffect(self)
         self.glow_effect.setBlurRadius(32)
         self.glow_effect.setOffset(0, 0)
@@ -90,7 +90,7 @@ class ProductCard(QWidget):
         main_layout.setContentsMargins(14, 14, 14, 14)
         main_layout.setSpacing(8)
 
-        # 1. صورة المنتج (بخلفية شفافة حتى لا تحجب لون الكارد)
+        # photo of the product
         self.image_label = QLabel()
         self.image_label.setFixedHeight(170)
         self.image_label.setAlignment(Qt.AlignCenter)
@@ -98,7 +98,7 @@ class ProductCard(QWidget):
         self._load_product_image(image_url)
         main_layout.addWidget(self.image_label)
 
-        # 2. اسم المتجر وشارة الفئة
+        # Name of the Store
         store_row = QHBoxLayout()
         store_label = QLabel(self.store_name)
         store_label.setStyleSheet("font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;")
@@ -119,14 +119,14 @@ class ProductCard(QWidget):
 
         main_layout.addLayout(store_row)
 
-        # 3. عنوان المنتج
+        # Title of product
         product_label = QLabel(self.product_name)
         product_label.setWordWrap(True)
         product_label.setStyleSheet(f"font-size: 14px; font-weight: 700; color: {self.theme['text']};")
         product_label.setFixedHeight(38)
         main_layout.addWidget(product_label)
 
-        # 4. السعر والتقييم والزر (الزر ثابت بلونه الكحلي)
+        # the price and the reviwe
         bottom_bar = QHBoxLayout()
         bottom_bar.setContentsMargins(0, 4, 0, 0)
         bottom_bar.setSpacing(6)
@@ -197,7 +197,7 @@ class ProductCard(QWidget):
         self.glow_effect.setEnabled(False)
         self._apply_idle_style()
         super().leaveEvent(event)
-
+    #to lode the photo even if it was form wep like it start with :http://"
     def _load_product_image(self, url_or_path: str):
         pixmap = QPixmap()
         try:
@@ -212,7 +212,7 @@ class ProductCard(QWidget):
                 pixmap.load(url_or_path)
         except Exception:
             pass
-
+        # to but 📦 No Image if there is not image or it didn't lode
         if not pixmap.isNull():
             scaled = pixmap.scaled(320, 170, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.image_label.setPixmap(scaled)

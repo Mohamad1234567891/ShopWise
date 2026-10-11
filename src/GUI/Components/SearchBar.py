@@ -14,7 +14,7 @@ class SearchBar(QWidget):
 
         self.setFixedHeight(50)
         self.setMinimumWidth(240)    # Shrinks smoothly on small screens
-        self.setMaximumWidth(16777215) # Removes the upper limit completely
+        self.setMaximumWidth(1100) # Removes the upper limit completely
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setAttribute(Qt.WA_StyledBackground, True)
