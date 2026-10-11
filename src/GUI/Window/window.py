@@ -51,7 +51,9 @@ card1 = ProductCard(
     price="₺42,490",
     rating=4.8,
     button_text="View Offer",
-    button_url="https://www.amazon.com"
+    button_url="https://www.amazon.com",
+    color="blue"
+
 )
 card2 = ProductCard(
     store_name="Hepsiburada",
