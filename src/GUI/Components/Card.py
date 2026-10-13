@@ -1,52 +1,13 @@
-import urllib.request
+import webbrowser
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGraphicsDropShadowEffect
+    QFrame, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QGraphicsDropShadowEffect
 )
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap, QImage, QColor
-from src.GUI.Components.Button import Button
+from PySide6.QtCore import Qt, QUrl
+from PySide6.QtGui import QPixmap, QColor
+from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 
 
-class ProductCard(QWidget):
-    #
-    COLOR_MAP = {
-        # the gold color of card
-        "gold": {
-            "bg": "#fef08a",
-            "border": "#eab308",
-            "glow": QColor(234, 179, 8, 220),
-            "text": "#0f172a",
-            "badge_bg": "#ca8a04",
-            "badge_color": "#ffffff"
-        },
-        # the blue color of card
-        "blue": {
-            "bg": "#bfdbfe",
-            "border": "#2563eb",
-            "glow": QColor(37, 99, 235, 220),
-            "text": "#0f172a",
-            "badge_bg": "#1d4ed8",
-            "badge_color": "#ffffff"
-        },
-        # the red color of card
-        "red": {
-            "bg": "#fecaca",
-            "border": "#ef4444",
-            "glow": QColor(239, 68, 68, 220),
-            "text": "#0f172a",
-            "badge_bg": "#dc2626",
-            "badge_color": "#ffffff"
-        },
-        # the color of wight card and style
-        "white": {
-            "bg": "#ffffff",
-            "border": "#e2e8f0",
-            "glow": QColor(241, 245, 249, 180),
-            "text": "#0f172a",
-            "badge_bg": "#1e3a5f",
-            "badge_color": "#fbbf24"
-        }
-    }
+class ProductCard(QFrame):
 
     def __init__(
         self,
@@ -54,174 +15,264 @@ class ProductCard(QWidget):
         product_name: str,
         image_url: str,
         price: str,
-        rating: str,
-        button_text: str,
-        button_url: str,
+        rating: float,
+        button_text: str = "View Offer",
+        button_url: str = "",
         color: str = "white",
-        badge_text: str = None,
         parent=None
     ):
         super().__init__(parent)
+        self.button_url = button_url
+        self.color_theme = color.lower()
+        self.setFixedSize(280, 450)
 
-        self.store_name = store_name
-        self.product_name = product_name
-        self.price = price
-        self.rating = rating
+        # Base card styling & glow colors based on theme
+        if self.color_theme == "blue":
+            self.setStyleSheet("""
+                ProductCard {
+                    background-color: #bfdbfe;
+                    border: 2px solid #3b82f6;
+                    border-radius: 18px;
+                }
+            """)
+            self.title_color = "#1e293b"
+            self.store_color = "#475569"
+            self.price_color = "#0f172a"
+            # Blue ambient glow
+            self.base_glow_color = QColor(59, 130, 246, 60)
+            self.hover_glow_color = QColor(59, 130, 246, 170)
+        elif self.color_theme == "gold":
+            self.setStyleSheet("""
+                ProductCard {
+                    background-color: #fef9c3;
+                    border: 2px solid #eab308;
+                    border-radius: 18px;
+                }
+            """)
+            self.title_color = "#713f12"
+            self.store_color = "#854d0e"
+            self.price_color = "#713f12"
+            # Gold ambient glow
+            self.base_glow_color = QColor(234, 179, 8, 60)
+            self.hover_glow_color = QColor(234, 179, 8, 170)
+        elif self.color_theme == "red":
+            self.setStyleSheet("""
+                ProductCard {
+                    background-color: #fee2e2;
+                    border: 2px solid #ef4444;
+                    border-radius: 18px;
+                }
+            """)
+            self.title_color = "#7f1d1d"
+            self.store_color = "#991b1b"
+            self.price_color = "#7f1d1d"
+            # Red ambient glow
+            self.base_glow_color = QColor(239, 68, 68, 60)
+            self.hover_glow_color = QColor(239, 68, 68, 170)
+        else:
+            self.setStyleSheet("""
+                ProductCard {
+                    background-color: #ffffff;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 18px;
+                }
+            """)
+            self.title_color = "#0f172a"
+            self.store_color = "#64748b"
+            self.price_color = "#0f172a"
+            # White / soft-light glow
+            self.base_glow_color = QColor(255, 255, 255, 25)
+            self.hover_glow_color = QColor(255, 255, 255, 140)
 
-        choice = color.strip().lower()
-        self.theme = self.COLOR_MAP.get(choice, self.COLOR_MAP["white"])
-        #size
-        self.setFixedHeight(380)
-        self.setMinimumWidth(260)
-        self.setMaximumWidth(340)
-        self.setAttribute(Qt.WA_StyledBackground, True)
+        #  Ambient Glow Effect
+        self.shadow = QGraphicsDropShadowEffect(self)
+        self.shadow.setBlurRadius(15)
+        self.shadow.setXOffset(0)
+        self.shadow.setYOffset(0)
+        self.shadow.setColor(self.base_glow_color)
+        self.setGraphicsEffect(self.shadow)
 
-        self._apply_idle_style()
+        # Layout
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(14, 14, 14, 14)
+        self.main_layout.setSpacing(8)
 
-        # add blure to cards
-        self.glow_effect = QGraphicsDropShadowEffect(self)
-        self.glow_effect.setBlurRadius(32)
-        self.glow_effect.setOffset(0, 0)
-        self.glow_effect.setColor(self.theme["glow"])
-        self.glow_effect.setEnabled(False)
-        self.setGraphicsEffect(self.glow_effect)
-
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(14, 14, 14, 14)
-        main_layout.setSpacing(8)
-
-        # photo of the product
+        # Product Image Container
         self.image_label = QLabel()
-        self.image_label.setFixedHeight(170)
+        self.image_label.setFixedHeight(150)
         self.image_label.setAlignment(Qt.AlignCenter)
-        self.image_label.setStyleSheet("background-color: transparent; border-radius: 10px;")
-        self._load_product_image(image_url)
-        main_layout.addWidget(self.image_label)
+        self.image_label.setStyleSheet("""
+            QLabel {
+                background-color: #0f172a;
+                border-radius: 12px;
+            }
+        """)
+        self.main_layout.addWidget(self.image_label)
 
-        # Name of the Store
-        store_row = QHBoxLayout()
-        store_label = QLabel(self.store_name)
-        store_label.setStyleSheet("font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;")
-        store_row.addWidget(store_label)
+        self._load_image(image_url)
 
-        if badge_text:
-            tag_label = QLabel(badge_text)
-            tag_label.setStyleSheet(f"""
+        #  Store Name
+        self.store_label = QLabel(store_name.upper())
+        self.store_label.setStyleSheet(f"""
+            QLabel {{
+                color: {self.store_color};
                 font-size: 11px;
                 font-weight: 700;
-                color: {self.theme['badge_color']};
-                background-color: {self.theme['badge_bg']};
-                padding: 2px 8px;
-                border-radius: 8px;
-            """)
-            store_row.addStretch()
-            store_row.addWidget(tag_label)
-
-        main_layout.addLayout(store_row)
-
-        # Title of product
-        product_label = QLabel(self.product_name)
-        product_label.setWordWrap(True)
-        product_label.setStyleSheet(f"font-size: 14px; font-weight: 700; color: {self.theme['text']};")
-        product_label.setFixedHeight(38)
-        main_layout.addWidget(product_label)
-
-        # the price and the reviwe
-        bottom_bar = QHBoxLayout()
-        bottom_bar.setContentsMargins(0, 4, 0, 0)
-        bottom_bar.setSpacing(6)
-
-        price_label = QLabel(self.price)
-        price_label.setStyleSheet(f"font-size: 15px; font-weight: 800; color: {self.theme['text']};")
-        bottom_bar.addWidget(price_label)
-
-        rating_badge = QLabel(f"★ {self.rating}")
-        rating_badge.setFixedHeight(22)
-        rating_badge.setAlignment(Qt.AlignCenter)
-        rating_badge.setStyleSheet(f"""
-            background-color: {self.theme['badge_bg']};
-            color: {self.theme['badge_color']};
-            font-size: 11px;
-            font-weight: 700;
-            padding: 0px 8px;
-            border-radius: 11px;
+                letter-spacing: 0.5px;
+                background: transparent;
+            }}
         """)
-        bottom_bar.addWidget(rating_badge)
+        self.main_layout.addWidget(self.store_label)
 
-        bottom_bar.addStretch()
+        #  Product Title
+        self.title_label = QLabel(product_name)
+        self.title_label.setWordWrap(True)
+        self.title_label.setFixedHeight(36)
+        self.title_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.title_label.setStyleSheet(f"""
+            QLabel {{
+                color: {self.title_color};
+                font-size: 13px;
+                font-weight: 700;
+                line-height: 1.2;
+                background: transparent;
+            }}
+        """)
+        self.main_layout.addWidget(self.title_label)
 
-        self.action_button = Button(button_text, button_url)
-        self.action_button.setFixedHeight(34)
+        #  Warnings / Badges Layout (Stacked Vertically)
+        self.tags_layout = QVBoxLayout()
+        self.tags_layout.setContentsMargins(0, 2, 0, 2)
+        self.tags_layout.setSpacing(4)
+        self.tags_layout.setAlignment(Qt.AlignLeft)
+        self.main_layout.addLayout(self.tags_layout)
+
+        self.main_layout.addStretch()
+
+        #  Bottom Row: Price, Rating, Action Button
+        bottom_row = QHBoxLayout()
+        bottom_row.setContentsMargins(0, 0, 0, 0)
+        bottom_row.setSpacing(8)
+
+        self.price_label = QLabel(price)
+        self.price_label.setStyleSheet(f"""
+            QLabel {{
+                color: {self.price_color};
+                font-size: 14px;
+                font-weight: 800;
+                background: transparent;
+            }}
+        """)
+        bottom_row.addWidget(self.price_label)
+
+        self.rating_label = QLabel(f"★ {rating:.1f}")
+        self.rating_label.setStyleSheet("""
+            QLabel {
+                background-color: #2563eb;
+                color: #ffffff;
+                font-size: 11px;
+                font-weight: 700;
+                padding: 3px 6px;
+                border-radius: 6px;
+            }
+        """)
+        bottom_row.addWidget(self.rating_label)
+
+        bottom_row.addStretch()
+
+        self.action_button = QPushButton(button_text)
+        self.action_button.setFixedHeight(32)
+        self.action_button.setCursor(Qt.PointingHandCursor)
         self.action_button.setStyleSheet("""
             QPushButton {
-                background-color: #1e3a5f;
+                background-color: #1e293b;
                 color: #ffffff;
-                font-size: 12px;
+                font-size: 11px;
                 font-weight: 700;
-                padding: 0 14px;
-                border-radius: 17px;
+                padding: 0 12px;
                 border: none;
+                border-radius: 8px;
             }
             QPushButton:hover {
-                background-color: #2b4f7a;
+                background-color: #334155;
             }
             QPushButton:pressed {
                 background-color: #0f172a;
             }
         """)
-        bottom_bar.addWidget(self.action_button)
+        self.action_button.clicked.connect(self._open_url)
+        bottom_row.addWidget(self.action_button)
 
-        main_layout.addLayout(bottom_bar)
+        self.main_layout.addLayout(bottom_row)
 
-    def _apply_idle_style(self):
-        self.setStyleSheet(f"""
-            ProductCard {{
-                background-color: {self.theme['bg']};
-                border: 2px solid {self.theme['border']};
-                border-radius: 16px;
-            }}
-        """)
-
+    # --- Mouse Hover Glow Events ---
     def enterEvent(self, event):
-        self.glow_effect.setEnabled(True)
-        self.setStyleSheet(f"""
-            ProductCard {{
-                background-color: {self.theme['bg']};
-                border: 2px solid {self.theme['border']};
-                border-radius: 16px;
-            }}
-        """)
+        """Intensifies color glow and spreads blur on hover."""
         super().enterEvent(event)
+        self.shadow.setBlurRadius(35)
+        self.shadow.setColor(self.hover_glow_color)
 
     def leaveEvent(self, event):
-        self.glow_effect.setEnabled(False)
-        self._apply_idle_style()
+        """Restores default ambient glow when mouse leaves."""
         super().leaveEvent(event)
-    #to lode the photo even if it was form wep like it start with :http://"
+        self.shadow.setBlurRadius(15)
+        self.shadow.setColor(self.base_glow_color)
 
+    def _open_url(self):
+        if self.button_url:
+            webbrowser.open(self.button_url)
 
+    def _load_image(self, url: str):
+        if not url:
+            self.image_label.setText("No Image")
+            self.image_label.setStyleSheet("color: #64748b; background-color: #0f172a; border-radius: 12px;")
+            return
 
+        self.network_manager = QNetworkAccessManager(self)
+        self.reply = self.network_manager.get(QNetworkRequest(QUrl(url)))
+        self.reply.finished.connect(self._on_image_downloaded)
 
-
-
-    def _load_product_image(self, url_or_path: str):
-        pixmap = QPixmap()
-        try:
-            if url_or_path.startswith("http://") or url_or_path.startswith("https://"):
-                req = urllib.request.Request(url_or_path, headers={"User-Agent": "Mozilla/5.0"})
-                with urllib.request.urlopen(req, timeout=3) as resp:
-                    raw_data = resp.read()
-                image = QImage()
-                if image.loadFromData(raw_data):
-                    pixmap = QPixmap.fromImage(image)
-            else:
-                pixmap.load(url_or_path)
-        except Exception:
-            pass
-        # to but 📦 No Image if there is not image or it didn't lode
-        if not pixmap.isNull():
-            scaled = pixmap.scaled(320, 170, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            self.image_label.setPixmap(scaled)
+    def _on_image_downloaded(self):
+        if self.reply.error() == QNetworkReply.NoError:
+            image_data = self.reply.readAll()
+            pixmap = QPixmap()
+            pixmap.loadFromData(image_data)
+            scaled_pixmap = pixmap.scaled(
+                240, 140, Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
+            self.image_label.setPixmap(scaled_pixmap)
         else:
-            self.image_label.setText("📦 No Image")
-            self.image_label.setStyleSheet("background-color: transparent; color: #94a3b8; font-size: 13px; border-radius: 10px;")
+            self.image_label.setText("No Image")
+            self.image_label.setStyleSheet("color: #64748b; background-color: #0f172a; border-radius: 12px;")
+        self.reply.deleteLater()
+
+    #  Badge Helper
+    def _add_tag(self, text: str, bg_color: str, text_color: str, tooltip: str = ""):
+        tag = QLabel(text)
+        if tooltip:
+            tag.setToolTip(tooltip)
+        tag.setStyleSheet(f"""
+            QLabel {{
+                background-color: {bg_color};
+                color: {text_color};
+                font-size: 10px;
+                font-weight: 700;
+                padding: 3px 8px;
+                border-radius: 4px;
+                border: 1px solid {text_color}40;
+            }}
+        """)
+        self.tags_layout.addWidget(tag)
+
+    #  Warning Methods
+    def brockProdact(self):
+        self._add_tag("Broken Product", "rgba(239, 68, 68, 0.15)", "#ef4444", "Damaged reports on delivery.")
+
+    def lowPrice(self):
+        self._add_tag("Suspicious Low Price", "rgba(234, 88, 12, 0.18)", "#ea580c", "Abnormally low price. Potential scam.")
+
+    def lowRating(self):
+        self._add_tag("Low Rating", "rgba(234, 179, 8, 0.18)", "#ca8a04", "Customer rating is critically low.")
+
+    def proplemProdact(self):
+        self._add_tag("Problem Product", "rgba(225, 29, 72, 0.18)", "#e11d48", "Frequent buyer complaints.")

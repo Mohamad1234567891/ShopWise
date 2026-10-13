@@ -12,7 +12,7 @@ from src.GUI.Components.Card import ProductCard
 
 
 class SmallLoader(QWidget):
-    """مؤشر تحميل دائري صغير يوضع بجانب شريط البحث."""
+
 
     def __init__(self, size: int = 24, parent=None):
         super().__init__(parent)
@@ -45,14 +45,14 @@ class SmallLoader(QWidget):
         pen.setWidth(3)
         pen.setCapStyle(Qt.RoundCap)
 
-        # مسار رمادي خفيف غير مفعل
+
         pen.setColor(QColor(255, 255, 255, 25))
         painter.setPen(pen)
         margin = 3
         draw_size = self.size_val - (margin * 2)
         painter.drawEllipse(margin, margin, draw_size, draw_size)
 
-        # قوس التحميل المتحرك
+
         pen.setColor(QColor("#38bdf8"))
         painter.setPen(pen)
         painter.drawArc(margin, margin, draw_size, draw_size, -self.angle * 16, 90 * 16)
@@ -72,12 +72,10 @@ class Window(QMainWindow):
         self.layout.setContentsMargins(20, 20, 30, 20)
         self.layout.setSpacing(12)
 
-        # مساحة اللوجو
         self.logo_space = QWidget()
         self.logo_space.setFixedHeight(30)
         self.layout.addWidget(self.logo_space)
 
-        # صف شريط البحث ومؤشر التحميل
         search_row = QHBoxLayout()
         search_row.setContentsMargins(0, 0, 0, 0)
         search_row.setSpacing(10)
@@ -86,7 +84,7 @@ class Window(QMainWindow):
         self.search_bar = SearchBar(suggestions=suggestions)
         self.search_bar.setMaximumWidth(700)
 
-        # مؤشر التحميل الصغير
+
         self.loader = SmallLoader(size=24)
 
         search_row.addStretch()
@@ -97,7 +95,6 @@ class Window(QMainWindow):
         self.layout.addLayout(search_row)
         self.search_bar.search_submitted.connect(self.on_search)
 
-        # نص التنبيه أسفل شريط البحث بتصميم هادئ ومريح للعين
         self.loading_hint = QLabel("This might take a few minutes...")
         self.loading_hint.setAlignment(Qt.AlignCenter)
         self.loading_hint.setStyleSheet("""
@@ -110,26 +107,23 @@ class Window(QMainWindow):
                 padding-top: 2px;
             }
         """)
-        # يظل مخفياً حتى يبدأ البحث
+
         self.loading_hint.hide()
         self.layout.addWidget(self.loading_hint)
 
-        # حاوية عرض الكروت
+
         self.scroll_container = ScrollContainer()
         self.layout.addWidget(self.scroll_container)
 
     def on_search(self, query):
         print(f"User searched for: {query}")
 
-        # 1. تفعيل المؤشر وإظهار النص
         self.loader.start()
         self.loading_hint.show()
 
-        # 2. عندما ينتهي فريق الـ Backend من إرسال البيانات يستدعي الدالة التالية:
         # self.stop_loading_ui()
 
     def stop_loading_ui(self):
-        """دالة لإيقاف المؤشر وإخفاء النص معاً عند انتهاء جلب البيانات."""
         self.loader.close_loading()
         self.loading_hint.hide()
 
@@ -147,6 +141,8 @@ card1 = ProductCard(
     button_url="https://www.amazon.com",
     color="blue"
 )
+
+
 card2 = ProductCard(
     store_name="Hepsiburada",
     product_name="Samsung Galaxy S25 256GB - Phantom Black",
@@ -155,6 +151,7 @@ card2 = ProductCard(
     rating=3.4,
     button_text="View Offer",
     button_url="https://www.amazon.com"
+    ,color="gold"
 )
 card3 = ProductCard(
     store_name="Trendyol",
@@ -163,8 +160,13 @@ card3 = ProductCard(
     price="₺40,100",
     rating=4.0,
     button_text="View Offer",
-    button_url="https://www.amazon.com"
+    button_url="https://www.amazon.com",
+    color="red"
 )
+card3.brockProdact()
+card3.lowRating()
+card3.lowPrice()
+card3.proplemProdact()
 card4 = ProductCard(
     store_name="Trendyol",
     product_name="Samsung Galaxy S25 256GB - Phantom Black",

@@ -4,7 +4,6 @@ from PySide6.QtGui import QPainter, QColor, QPen
 
 
 class SmallLoader(QWidget):
-    """A compact, circular loading spinner placed next to the search bar."""
     def __init__(self, size: int = 28, parent=None):
         super().__init__(parent)
         self.size_val = size
@@ -18,7 +17,6 @@ class SmallLoader(QWidget):
         self.hide()
 
     def start(self):
-        """Starts rotation and shows the loader."""
         self.angle = 0
         self.show()
         self.timer.start(16)  # ~60 FPS
