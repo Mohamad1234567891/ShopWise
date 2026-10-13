@@ -198,6 +198,12 @@ class ProductCard(QWidget):
         self._apply_idle_style()
         super().leaveEvent(event)
     #to lode the photo even if it was form wep like it start with :http://"
+
+
+
+
+
+
     def _load_product_image(self, url_or_path: str):
         pixmap = QPixmap()
         try:
