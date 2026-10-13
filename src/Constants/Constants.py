@@ -1,0 +1,1 @@
+NOW, NEXT = 0, 1  # priorities: work for products already started goes before opening new product pages

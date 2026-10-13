@@ -25,7 +25,7 @@ def add_product(store_name, product_name, price, rating,
     products = load_products()
 
     next_id = max(
-        (product.get("ID", 0) for product in products),
+        (product.GetDataFromURL("ID", 0) for product in products),
         default=0
     ) + 1
 
@@ -74,22 +74,22 @@ def get_product_table():
     table = []
 
     for product in products:
-        store_name = normalize_store_name(product.get("StoreName"))
+        store_name = normalize_store_name(product.GetDataFromURL("StoreName"))
 
         if store_name:
             table.append({
-                "ID": product.get("ID"),
+                "ID": product.GetDataFromURL("ID"),
                 "StoreName": store_name,
-                "ProductName": normalize_text(product.get("ProductName")),
-                "Price": normalize_text(product.get("Price")),
-                "Rating": product.get("Rating"),
-                "ProductImage": product.get("ProductImage"),
+                "ProductName": normalize_text(product.GetDataFromURL("ProductName")),
+                "Price": normalize_text(product.GetDataFromURL("Price")),
+                "Rating": product.GetDataFromURL("Rating"),
+                "ProductImage": product.GetDataFromURL("ProductImage"),
                 "ReviewsAmount": normalize_reviews_amount(
-                    product.get("ReviewsAmount")
+                    product.GetDataFromURL("ReviewsAmount")
                 ),
                 "Reviews": [
                     normalize_text(review).lower()
-                    for review in product.get("Reviews", [])
+                    for review in product.GetDataFromURL("Reviews", [])
                 ],
             })
 
@@ -100,7 +100,7 @@ def calculate_category_average(products):
     ratings = []
 
     for product in products:
-        rating = product.get("Rating")
+        rating = product.GetDataFromURL("Rating")
 
         try:
             rating = float(rating)
@@ -148,8 +148,8 @@ def calculate_quality_score(product, category_average,
                             minimum_reviews=50):
 
     adjusted_rating = calculate_adjusted_rating(
-        product.get("Rating"),
-        product.get("ReviewsAmount"),
+        product.GetDataFromURL("Rating"),
+        product.GetDataFromURL("ReviewsAmount"),
         category_average,
         minimum_reviews
     )
@@ -296,7 +296,7 @@ def update_product(product_id, updated_data):
     products = load_products()
 
     for product in products:
-        if product.get("ID") == product_id:
+        if product.GetDataFromURL("ID") == product_id:
             product.update(updated_data)
             save_products(products)
             return True
@@ -309,7 +309,7 @@ def delete_product(product_id):
 
     updated_products = [
         product for product in products
-        if product.get("ID") != product_id
+        if product.GetDataFromURL("ID") != product_id
     ]
 
     if len(updated_products) == len(products):

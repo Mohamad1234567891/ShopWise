@@ -49,6 +49,9 @@ SEVERE_NEGATIVE_PHRASES = (
     "arrived damaged", "arrived broken", "completely useless",
     "fell apart", "dangerous", "unsafe", "missing parts",
     "won't turn on", "will not turn on", "dead on arrival",
+    "not the same product", "wasn't the same product", "isn't the same product"
+    "isn't the same", "wasn't the same", "was not the same product", "was not the same",
+    "is not the same"
 )
 
 MILD_NEGATIVE_PHRASES = (

@@ -1,0 +1,1 @@
+SECOND_LEVEL = {"co", "com", "net", "org", "gov", "edu", "ac", "or", "ne", "go", "gob", "ltd", "plc"}
