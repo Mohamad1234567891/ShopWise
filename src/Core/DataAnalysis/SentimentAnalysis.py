@@ -3,12 +3,14 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.sentiment import SentimentIntensityAnalyzer
 
-nltk.download("punkt_tab")
-nltk.download("stopwords")
-nltk.download("vader_lexicon")
+# Download the NLTK resources used by this file.
+nltk.download("punkt_tab", quiet=True)
+nltk.download("stopwords", quiet=True)
+nltk.download("vader_lexicon", quiet=True)
 
 
 def process_text(text):
+    """Original preprocessing function: lowercase, tokenize, and remove stopwords."""
     tokens = word_tokenize(text.lower())
     stop_words = set(stopwords.words("english"))
 
@@ -21,32 +23,102 @@ def process_text(text):
 
 
 def analyze_sentiment(text):
-    analyzer = SentimentIntensityAnalyzer()
-    scores = analyzer.polarity_scores(text)
-    compound_score = scores["compound"]
+    """
+    Original sentiment function, kept unchanged in behavior for compatibility.
 
-    if compound_score >= 0.05:
+    Returns:
+        True  = Positive
+        False = Negative
+        None  = Neutral
+    """
+    analyzer = SentimentIntensityAnalyzer()
+    score = analyzer.polarity_scores(text)["compound"]
+
+    if score >= 0.05:
         return True
-    elif compound_score <= -0.05:
+    elif score <= -0.05:
         return False
     else:
         return None
 
 
-text = input("Enter a sentence: ")
+# New feature: classify product reviews by negative severity.
+SEVERE_NEGATIVE_PHRASES = (
+    "broken", "doesn't work", "does not work", "not working",
+    "stopped working", "unusable", "defective", "damaged",
+    "arrived damaged", "arrived broken", "completely useless",
+    "fell apart", "dangerous", "unsafe", "missing parts",
+    "won't turn on", "will not turn on", "dead on arrival",
+)
 
-important_words = process_text(text)
-sentiment = analyze_sentiment(text)
+MILD_NEGATIVE_PHRASES = (
+    "didn't like", "did not like", "not impressed",
+    "not what i expected", "disappointed", "could be better",
+    "poor quality", "not great", "not good",
+)
 
-print("Original text:", text)
-print("Important words:", important_words)
+SEVERE_NEGATION_EXCEPTIONS = (
+    "not broken", "isn't broken", "is not broken",
+    "not damaged", "isn't damaged", "is not damaged",
+    "not defective", "doesn't seem broken",
+)
 
-if sentiment is True:
-    print("Sentiment: Positive")
-    print("Result:", True)
-elif sentiment is False:
-    print("Sentiment: Negative")
-    print("Result:", False)
-else:
-    print("Sentiment: Neutral")
-    print("Result: None")
+
+def evaluate_review(text):
+    """
+    Return the ShopWise product-review severity score.
+
+    0 = Positive
+    1 = Neutral
+    2 = Mildly negative
+    3 = Severely negative
+    """
+    if not isinstance(text, str) or not text.strip():
+        raise ValueError("Please enter a non-empty review.")
+
+    review = " ".join(text.lower().split())
+    analyzer = SentimentIntensityAnalyzer()
+    compound_score = analyzer.polarity_scores(text)["compound"]
+
+    # Avoid treating common explicit negations as severe failures.
+    has_severe_negation = any(
+        phrase in review for phrase in SEVERE_NEGATION_EXCEPTIONS
+    )
+    if not has_severe_negation and any(
+        phrase in review for phrase in SEVERE_NEGATIVE_PHRASES
+    ):
+        return 3
+
+    if any(phrase in review for phrase in MILD_NEGATIVE_PHRASES):
+        return 2
+
+    if compound_score >= 0.05:
+        return 0
+    elif compound_score <= -0.05:
+        return 2
+    else:
+        return 1
+
+
+if __name__ == "__main__":
+    review_text = input("Enter a product review: ")
+
+    try:
+        important_words = process_text(review_text)
+        original_result = analyze_sentiment(review_text)
+        severity = evaluate_review(review_text)
+
+        labels = {
+            0: "Positive",
+            1: "Neutral",
+            2: "Mildly negative",
+            3: "Severely negative",
+        }
+
+        print("Original text:", review_text)
+        print("Important words:", important_words)
+        print("Original analyze_sentiment result:", original_result)
+        print("Severity:", labels[severity])
+        print("Severity score:", severity)
+    except ValueError as error:
+        print(error)
