@@ -32,21 +32,21 @@ def UpdateSettings(
 ):
   global MAX_PRODUCTS, MAX_SEARCH_RESULTS, GET_REVIEWS, MAX_REVIEW_PAGES, HTTP_PER_STORE, BROWSER_TABS, REQUEST_TIMEOUT, PRODUCT_TIME_LIMIT, VERBOSE
 
-  if maxProducts is not _NOT_GIVEN:
+  if maxProducts is not _NOT_GIVEN and maxProducts:
     MAX_PRODUCTS = maxProducts
-  if maxSearchResults is not _NOT_GIVEN:
+  if maxSearchResults is not _NOT_GIVEN and maxSearchResults:
     MAX_SEARCH_RESULTS = maxSearchResults
-  if getReviews is not _NOT_GIVEN:
+  if getReviews is not _NOT_GIVEN and getReviews:
     GET_REVIEWS = getReviews
-  if maxReviewPages is not _NOT_GIVEN:
+  if maxReviewPages is not _NOT_GIVEN and maxReviewPages:
     MAX_REVIEW_PAGES = maxReviewPages
-  if httpPerStore is not _NOT_GIVEN:
+  if httpPerStore is not _NOT_GIVEN and httpPerStore:
     HTTP_PER_STORE = httpPerStore
-  if browserTabs is not _NOT_GIVEN:
+  if browserTabs is not _NOT_GIVEN and browserTabs:
     BROWSER_TABS = browserTabs
-  if requestTimeout is not _NOT_GIVEN:
+  if requestTimeout is not _NOT_GIVEN and requestTimeout:
     REQUEST_TIMEOUT = requestTimeout
-  if productTimeLimit is not _NOT_GIVEN:
+  if productTimeLimit is not _NOT_GIVEN and productTimeLimit:
     PRODUCT_TIME_LIMIT = productTimeLimit
-  if verbose is not _NOT_GIVEN:
+  if verbose is not _NOT_GIVEN and verbose:
     VERBOSE = verbose

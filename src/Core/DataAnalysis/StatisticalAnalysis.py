@@ -1,12 +1,30 @@
-import re
 import statistics
+import re
 
 from src.Core.DataAnalysis import SentimentAnalysis as SA
 from src.Core.DataAnalysis import Translator as T
 
+# Keep your existing imports for these two modules, for example:
+# import Translator as T
+# import SentimentAnalyzer as SA
+
+
+def HasValidPrice(item):
+  priceStr = str(item.get("price", "")).strip()
+  match = re.search(r"[-+]?\d*\.\d+|\d+", priceStr)
+  if not match:
+    return False  # "N/A", "", None, no digits
+  if re.match(r"\D*-\s*\.?\d", priceStr):
+    return False  # negative price
+  return float(match.group()) > 0  # removes 0 / 0.00
+
+
 def AssignPoints(storeList):
   if not storeList:
     return storeList
+
+  # 0. Remove products with no price, 0, negative, or N/A
+  storeList = [item for item in storeList if HasValidPrice(item)]
 
   # 1. Parse numerical prices and pair them with original dicts
   parsedData = []
@@ -108,9 +126,6 @@ def AssignPoints(storeList):
       item["points"] = totalPoints
 
   return storeList
-
-
-import re
 
 
 def SortAndColorStores(storeList):

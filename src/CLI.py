@@ -8,14 +8,13 @@ from src.Core.DataAcquisition.Scraping import Scraper
 from src.Core.DataAcquisition.Scraping import Search
 from src.Core.DataAcquisition import AsyncSession as AM
 
-from src.Core import Settings
+from src.Core import Settings, CLIRenderer
 
 from src.Operations import URLOperations as UO
 from src.Operations import ThreadOperations as TO
 
 from src.Core.DataAnalysis import StatisticalAnalysis as SA
-
-from src import CLIRenderer
+from src.Core import ArgumentsParser as AP
 
 
 def GetResultsOfStores(stores):
@@ -31,7 +30,10 @@ def GetResultsOfStores(stores):
 
 # ================================================================ MAIN
 async def main():
-    urls = Search.GetRegionalStoreUrls("buy Iphone 17")
+    args = AP.parseArguments()
+    urls = Search.GetRegionalStoreUrls(args.productName)
+
+    Settings.UpdateSettings(args.maxProducts, args.maxSearch, args.getReviews, args.maxPages, args.HTTPPerStore, args.browserTabs, args.requestTimeout, args.productTimeLimit, args.verbose)
 
     startTime = time.perf_counter()
 
