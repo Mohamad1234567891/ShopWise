@@ -101,6 +101,11 @@ CLI arguments ──► Region auto-detection ──► Store discovery (DuckDuc
 ```
 ShopWise/
 ├── contributions/                          # Individual team-member contribution reports
+│   ├── ABDULRAB_ALMUSALI_2409115801_AbdulrabAlmusali.md      # Abdulrab Almusali
+│   ├── BASHIR_ALZOUBI_2409115364_bashir515.md                # Bashir Alzoubi
+│   ├── MUHAMMED_BEKIROĞLU_2509115185_mohamad1234567891.md   # Muhammed Bekiroğlu (team lead)
+│   ├── OMER_AGAOGLU_2509115344_omeragaoglu.md.md            # Ömer Ağaoğlu
+│   └── Y.H.Y.M_BAKR_RAIYAN_2309116473_yrayan-coder.md       # Y.H.Y.M Bakr Raiyan
 ├── src/
 │   ├── CLI.py                              # Entry point — orchestrates the full pipeline
 │   ├── Constants/
@@ -129,17 +134,32 @@ ShopWise/
 │   │       ├── StatisticalAnalysis.py      # Scoring, ranking & color-coding
 │   │       └── Translator.py               # Detects & translates reviews to English
 │   ├── GUI/
-│   │   ├── Components/                     # Buttons, cards, search bar, scrolling, loaders
-│   │   └── Window/                         # Main application window (PySide6)
+│   │   ├── Components/
+│   │   │   ├── Button.py                   # "View Offer" button that opens product URLs
+│   │   │   ├── Card.py                     # Product card (image, price, rating, badges)
+│   │   │   ├── loading.py                  # Animated loading indicator
+│   │   │   ├── Scroll.py                   # Scrollable results container
+│   │   │   └── SearchBar.py                # Search bar with suggestions & signals
+│   │   └── Window/
+│   │       └── window.py                   # Main application window (PySide6)
 │   ├── Helpers/
 │   │   └── HTTPHelper.py                   # Anti-bot / block-page detection
-│   ├── Operations/                         # HTML, JSON, URL, string, math & threading utilities
+│   ├── Operations/
+│   │   ├── DictionaryOperations.py         # Dictionary helper functions
+│   │   ├── HTMLOperations.py               # HTML parsing, semantics & microdata
+│   │   ├── JsonOperations.py               # Embedded JSON & JSON-LD extraction
+│   │   ├── MathOperations.py               # Rating conversion to a 0-5 scale
+│   │   ├── StringOperations.py             # Text cleaning, numbers, reviews & names
+│   │   ├── ThreadOperations.py             # Worker pools & async dispatch
+│   │   └── URLOperations.py                # URL cleaning, IDs & link patterns
 │   └── products.json                       # Sample exported search results
 ├── Setup.py                                # One-command, cross-platform setup script
 ├── requirements.txt                        # Python dependencies
 ├── .gitignore
 └── README.md
 ```
+
+> Generated folders such as `.venv/` and `__pycache__/` are git-ignored and intentionally not shown.
 
 ---
 
