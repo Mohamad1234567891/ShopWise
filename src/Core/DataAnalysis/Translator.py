@@ -1,5 +1,5 @@
 import time
-from collectigitons import defaultdict
+from collections import defaultdict
 from langdetect import detect, DetectorFactory, LangDetectException
 import argostranslate.translate
 
