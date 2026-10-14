@@ -499,7 +499,7 @@ def IsCounterText(text):
     Examples:
         # Filters out rating counts from review candidates:
         if IsCounterText("(87)"):
-            print("Skipping count widget.")
+            `print(`"Skipping count widget.")
     """
     return len(text) <= 40 and bool(
         RE.COUNT_TEXT_RE.fullmatch(text) or

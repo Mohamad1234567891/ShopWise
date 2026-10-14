@@ -9,7 +9,7 @@ nltk.download("stopwords", quiet=True)
 nltk.download("vader_lexicon", quiet=True)
 
 
-def process_text(text):
+def ProcessText(text):
     """Original preprocessing function: lowercase, tokenize, and remove stopwords."""
     tokens = word_tokenize(text.lower())
     stop_words = set(stopwords.words("english"))
@@ -101,27 +101,3 @@ def evaluate_review(text):
         return 2
     else:
         return 1
-
-
-if __name__ == "__main__":
-    review_text = input("Enter a product review: ")
-
-    try:
-        important_words = process_text(review_text)
-        original_result = analyze_sentiment(review_text)
-        severity = evaluate_review(review_text)
-
-        labels = {
-            0: "Positive",
-            1: "Neutral",
-            2: "Mildly negative",
-            3: "Severely negative",
-        }
-
-        print("Original text:", review_text)
-        print("Important words:", important_words)
-        print("Original analyze_sentiment result:", original_result)
-        print("Severity:", labels[severity])
-        print("Severity score:", severity)
-    except ValueError as error:
-        print(error)
