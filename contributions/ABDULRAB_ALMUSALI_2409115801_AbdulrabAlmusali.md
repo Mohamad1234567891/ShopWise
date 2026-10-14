@@ -23,25 +23,15 @@ The validation function checks rating and price ranges, review counts, and negat
 
 Each algorithm uses a different scoring strategy, allowing the resulting product scores to be compared under different review counts, negative-review levels, and price conditions.
 
-## 2. Product Data Handling and Ranking — `Translator.py`
+## 2. Review Translation — `Translator.py`
 
-I implemented JSON-based product data management using `Assets/UserData.json`.
+I worked on a translation utility for product reviews collected from different online stores. The goal is to convert reviews written in different languages into English so they can be processed more consistently by the ShopWise application.
 
-The implemented functionality includes:
+The implementation uses Argos Translate for local translation and `langdetect` to identify the language of each review. It checks which translation language models are installed, reuses translation objects, and leaves reviews unchanged when they are already in English or cannot be translated.
 
-- Loading and saving product records.
-- Retrieving the product list.
-- Adding products with automatically generated IDs.
-- Updating permitted product fields.
-- Deleting product records.
-- Normalizing product text and review counts.
-- Building a normalized product table.
+I also included test code in the same file to check the translation process with sample reviews in different languages and measure the processing time for a larger list of reviews.
 
-I also implemented product evaluation functions to calculate the average category rating, an adjusted rating based on the product's rating and review count, a quality score, a price score, and a combined product score.
-
-The `rank_products()` function filters invalid product records, calculates product scores, and sorts valid products in descending order of their scores.
-
-These implementations support product data management and provide scoring and ranking functionality for comparing products within ShopWise.
+The translation utility depends on the availability of suitable language models. Its speed and translation quality need to be evaluated using actual product reviews.
 
 ## 3. Initial Text Preprocessing and Sentiment Analysis Implementation — `SentimentAnalysis.py`
 
@@ -62,15 +52,17 @@ This description covers only the initial implementation represented by my code.
 The implementations described in this report use the following libraries:
 
 - **Python standard library**
-  - `json`: Used to read and write product data stored in JSON format.
-  - `pathlib`: Used to handle file paths, including the product data file path.
+  - `json` and `pathlib`: Used for JSON data handling and file paths in the product-data implementation, if those functions remain part of my contribution.
+  - `time`: Used to measure translation processing time.
 - **NLTK**
   - Used for text tokenization, English stop-word filtering, and VADER-based sentiment analysis in the initial sentiment-analysis implementation.
+- **Argos Translate**
+  - Used for local translation of product reviews into English.
+- **langdetect**
+  - Used to detect the language of each review.
 
 ## 5. Key Contributions
 
-My main contribution to ShopWise was implementing core components for product evaluation, data management, and ranking.
+My contributions to ShopWise include implementing five alternative product-scoring algorithms, contributing the initial sentiment-analysis implementation, and working on a translation utility for product reviews. I also contributed product-data handling and ranking functionality when working on `DataExtractor.py`.
 
-Specifically, I developed five alternative product-scoring algorithms, implemented product data handling and ranking functionality, and contributed the initial implementation of sentiment analysis.
-
-Together, these contributions provide multiple approaches to product scoring, support the organization and evaluation of product data, and establish a basic foundation for sentiment-based text analysis.
+These components address product evaluation, data processing, sentiment analysis, and review translation within the project.
