@@ -9,6 +9,4 @@ BROWSER_TABS = 4           # browser tabs running at the same time (only used wh
 REQUEST_TIMEOUT = 20       # seconds per download
 PRODUCT_TIME_LIMIT = 60    # seconds for one product's reviews; after that it is saved with the reviews found
 VERBOSE = False      # print every product as JSON while running (False = only the progress line)
-BRAVE_API_KEY = "BSAYX8P8uGZ8Gm8rgt4qo_eQ2sqFXeo"
-OUTPUT_FILE = "products.json"
 ##########################################################################################################################
