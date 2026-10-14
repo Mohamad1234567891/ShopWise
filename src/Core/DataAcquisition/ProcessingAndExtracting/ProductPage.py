@@ -584,7 +584,7 @@ async def CollectReviewPages(fetcher, firstURL, referer, into):
         page = await fetcher.get(url, referer=referer, renderOptions={"scroll": True, "openReviews": True})
         if not page["html"] or page["status"] >= 400:
             return None, None
-        return page, await Settings.ParallelDispatch(ReviewsOnPage, page["html"], page["url"], page["json"])
+        return page, await TO.ParallelDispatch(ReviewsOnPage, page["html"], page["url"], page["json"])
 
     def Add(result):  # True when the page brought new reviews
         before = len(found)

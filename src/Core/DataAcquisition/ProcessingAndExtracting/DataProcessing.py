@@ -122,13 +122,13 @@ async def ProcessProduct(fetcher, store, index, pdpURL, listingURL, progress):
         store["results"].append((index, productData))
         progress["done"] += 1
 
-        if Settings.PRINT_PRODUCTS:
+        if Settings.VERBOSE:
             print(f"=== Processed Product {progress['done']}/{progress['total']} ({store['domain']}) ===")
             print(json.dumps(productData, indent=4, ensure_ascii=False))
             print("-" * 50)
-        else:
-            print(f"[{progress['done']}/{progress['total']}] {store['domain']}: {productData['price']} | "
-                  f"{len(reviews)} reviews | {productData['productName'][:70]}")
+        #else:
+            #print(f"[{progress['done']}/{progress['total']}] {store['domain']}: {productData['price']} | "
+                  #f"{len(reviews)} reviews | {productData['productName'][:70]}")
 
     except Exception as e:
         print(f"  -> Error processing product page {pdpURL}: {type(e).__name__}: {e}")
