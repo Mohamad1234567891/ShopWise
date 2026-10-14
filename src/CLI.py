@@ -13,6 +13,10 @@ from src.Core import Settings
 from src.Operations import URLOperations as UO
 from src.Operations import ThreadOperations as TO
 
+from src.Core.DataAnalysis import StatisticalAnalysis as SA
+
+from src import CLIRenderer
+
 
 def GetResultsOfStores(stores):
     """Takes in the stores, and returns a list of dictionaries for all products of all stores combined"""
@@ -42,6 +46,8 @@ async def main():
     progress = {"done": 0, "total": 0}
     stats = {"http": 0, "browser": 0}
 
+    print("[*] Scraping the network, hold on this might take a few minutes...")
+
     try:
         async with Fetcher() as fetcher:
             try:
@@ -51,7 +57,16 @@ async def main():
     finally:  # also runs on Ctrl+C: everything collected so far is saved
 
         TO.StopHelpers()
+
+        print("Our top products are listed first, with the best options usually found in the top five. We recommend checking prices and reviews, as the fifth item can sometimes outmatch the first. However, the top five will almost always give you the best value.")
+
         products = GetResultsOfStores(stores)
+
+        givenPointsProducts = SA.AssignPoints(products)
+
+        CLIRenderer.DisplayStoreCli(givenPointsProducts)
+
+        print(givenPointsProducts[0]["productURL"])
 
         if Settings.VERBOSE:
             print(f"\n[*] Crawling session complete: {len(products)} products in {time.perf_counter() - startTime:.1f}s "
