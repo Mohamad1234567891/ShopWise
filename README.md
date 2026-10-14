@@ -18,7 +18,8 @@ ShopWise is a cross-store product comparison engine that finds a product on the 
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Prerequisites](#prerequisites)
-- [Installation & Setup](#installation--setup)
+- [Automatic Setup (Recommended)](#automatic-setup-recommended)
+- [Manual Setup](#manual-setup)
 - [Usage](#usage)
   - [Running ShopWise](#running-shopwise)
   - [Command-Line Reference](#command-line-reference)
@@ -134,6 +135,7 @@ ShopWise/
 │   │   └── HTTPHelper.py                   # Anti-bot / block-page detection
 │   ├── Operations/                         # HTML, JSON, URL, string, math & threading utilities
 │   └── products.json                       # Sample exported search results
+├── Setup.py                                # One-command, cross-platform setup script
 ├── requirements.txt                        # Python dependencies
 ├── .gitignore
 └── README.md
@@ -149,7 +151,99 @@ ShopWise/
 
 ---
 
-## Installation & Setup
+## Automatic Setup (Recommended)
+
+The fastest way to get ShopWise running is the bundled [`Setup.py`](Setup.py) script. It performs the entire setup for you and **prints everything that is happening** to the terminal as it runs. It is **cross-platform** (Windows, macOS and Linux) and uses **only Python's standard library**, so nothing needs to be installed to run it.
+
+After cloning the repository, simply run:
+
+```bash
+cd ShopWise
+python3 Setup.py
+```
+
+> On Windows, use `python Setup.py` (or `py Setup.py`).
+
+The script will:
+
+1. Pick a suitable Python interpreter (3.10 or newer).
+2. Create the virtual environment `.venv`.
+3. Upgrade `pip` inside the environment.
+4. Install all dependencies from `requirements.txt`.
+5. Install the Playwright **Chromium** browser used by the scraper.
+6. Download the NLTK language resources used by the sentiment analysis.
+7. Ask whether to install the optional **Argos Translate** language models for review translation (default: **yes** — just press Enter).
+8. Verify that every dependency imports correctly.
+
+You can also control step 7 from the command line:
+
+```bash
+python3 Setup.py --install-translations   # install them without asking
+python3 Setup.py --skip-translations      # skip them without asking
+```
+
+When the script finishes, the setup is complete — activate the environment and run ShopWise as described in [Running ShopWise](#running-shopwise).
+
+> ✋ **Prefer to do everything by hand?** You can skip this section entirely and follow the [manual setup instructions](#manual-setup) below — `Setup.py` simply automates those same steps.
+
+> ⚠️ **Seeing `ModuleNotFoundError: No module named 'ddgs'` when running ShopWise?**
+>
+> If, after the setup, you try to run ShopWise with something like `python -m src.CLI "iphone 17" -m CLI` and get this error (or a similar "No module named ..." error):
+>
+> ```
+> Traceback (most recent call last):
+>   File "<frozen runpy>", line 203, in _run_module_as_main
+>   File "<frozen runpy>", line 88, in _run_code
+>   File ".../ShopWise/src/CLI.py", line 8, in <module>
+>     from src.Core.DataAcquisition.Scraping import Search
+>   File ".../ShopWise/src/Core/DataAcquisition/Scraping/Search.py", line 11, in <module>
+>     from ddgs import DDGS
+> ModuleNotFoundError: No module named 'ddgs'
+> ```
+>
+> it means the virtual environment is **not active** — the packages were installed inside `.venv`, so Python must run from inside it. Activate the environment first, depending on your operating system and terminal:
+>
+> **Linux — bash / zsh**
+>
+> ```bash
+> source .venv/bin/activate
+> ```
+>
+> **Linux — fish**
+>
+> ```fish
+> source .venv/bin/activate.fish
+> ```
+>
+> **macOS — bash / zsh (default terminal)**
+>
+> ```bash
+> source .venv/bin/activate
+> ```
+>
+> **macOS — fish**
+>
+> ```fish
+> source .venv/bin/activate.fish
+> ```
+>
+> **Windows — Command Prompt (cmd)**
+>
+> ```cmd
+> .venv\Scripts\activate
+> ```
+>
+> **Windows — PowerShell**
+>
+> ```powershell
+> .venv\Scripts\Activate.ps1
+> ```
+
+---
+
+## Manual Setup
+
+If you prefer to run every step yourself (or want to know exactly what `Setup.py` does), follow the instructions below.
 
 ### 1. Clone the repository
 
