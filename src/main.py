@@ -30,7 +30,9 @@ async def main():
     urls = Search.GetRegionalStoreUrls("buy Iphone 17")
 
     startTime = time.perf_counter()
-    print("[*] Initializing fast session (HTTP first, browser only for pages that need it)...")
+
+    if Settings.VERBOSE:
+        print("[*] Initializing session")
 
     if AM.GetAsyncSession() is None:
         print("[!] curl_cffi is not installed -> every page goes through the browser (slower). pip install curl_cffi")
@@ -39,9 +41,6 @@ async def main():
     stores = [{"url": u, "domain": UO.GetDomainFromURL(u), "results": [], "reviewApi": PE.ProductReviewExtractor()} for u in urls]
     progress = {"done": 0, "total": 0}
     stats = {"http": 0, "browser": 0}
-
-    for store in stores:
-        print(store)
 
     try:
         async with Fetcher() as fetcher:
@@ -54,9 +53,9 @@ async def main():
         TO.StopHelpers()
         products = GetResultsOfStores(stores)
 
-
-        print(f"\n[*] Crawling session complete: {len(products)} products in {time.perf_counter() - startTime:.1f}s "
-              f"({stats['http']} fast requests, {stats['browser']} browser pages). Saved to {Settings.OUTPUT_FILE}")
+        if Settings.VERBOSE:
+            print(f"\n[*] Crawling session complete: {len(products)} products in {time.perf_counter() - startTime:.1f}s "
+                  f"({stats['http']} fast requests, {stats['browser']} browser pages). Saved to {Settings.OUTPUT_FILE}")
 
 
 if __name__ == "__main__":

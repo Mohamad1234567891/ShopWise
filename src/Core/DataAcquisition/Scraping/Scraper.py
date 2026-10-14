@@ -17,7 +17,9 @@ async def ScrapeOneStore(fetcher, url, store, progress):
         store (dict): Metadata dictionary containing store configuration (e.g., 'domain').
         progress (dict): Shared dictionary tracking overall scraping metrics and totals.
     """
-    print(f"[*] Navigating to listing page: {url}")
+
+    if Settings.VERBOSE:
+        print(f"[*] Navigating to listing page: {url}")
 
     # Scroll enabled to force loading of lazy-loaded elements before extraction
     listing = await fetcher.get(url, renderOptions={"scroll": True})
@@ -36,7 +38,9 @@ async def ScrapeOneStore(fetcher, url, store, progress):
 
     # Fallback: If raw HTTP missed content due to client-side JS rendering, escalate to a headless browser
     if not pdpLinks and listing["via"] == "http" and not fetcher.browserFailed:
-        print(f"[*] No products in the raw HTML of {store['domain']} (rendered via JS) -> switching to browser...")
+        if Settings.VERBOSE:
+            print(f"[*] No products in the raw HTML of {store['domain']} (rendered via JS) -> switching to browser...")
+
         rendered = await fetcher.FetchDataThroughBrowser(url, navigate=True)
         if rendered["html"] and not rendered["blocked"]:
             listing = rendered
@@ -49,7 +53,9 @@ async def ScrapeOneStore(fetcher, url, store, progress):
     if Settings.MAX_PRODUCTS:
         pdpLinks = pdpLinks[:Settings.MAX_PRODUCTS]
 
-    print(f"[+] {store['domain']}: detected {len(pdpLinks)} product pages. Scraping universally...")
+    if Settings.VERBOSE:
+        print(f"[+] {store['domain']}: detected {len(pdpLinks)} product pages. Scraping...")
+
     if not pdpLinks:
         print(f"[!] No product links found on {url}")
         return

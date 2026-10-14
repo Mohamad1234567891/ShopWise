@@ -54,7 +54,9 @@ def GetRegionalStoreUrls(searchQuery, maxResults = Settings.MAX_SEARCH_RESULTS):
     stores concurrently as fast as possible.
     """
     regionCode = AutoDetectCountry()
-    print(f"[*] Auto-detected Region: {regionCode}")
+
+    if Settings.VERBOSE:
+        print(f"[*] Auto-detected Region: {regionCode}")
 
     storeList = C.STORES_BY_REGION.get(regionCode, C.STORES_BY_REGION["TR"])
     finalUrls = []
@@ -76,15 +78,3 @@ def GetRegionalStoreUrls(searchQuery, maxResults = Settings.MAX_SEARCH_RESULTS):
                 finalUrls.append(resultUrl)
 
     return finalUrls
-
-
-# --- Example Usage ---
-#if __name__ == "__main__":
-#    queryStr = "iphone 17"
-#
-#    print(f"[*] Searching for '{queryStr}' across local stores...")
-#    storeUrls = GetRegionalStoreUrls(queryStr)
-#
-#    print("\n[+] Final Matched Store URLs:")
-#    for urlItem in storeUrls:
-#        print(f'    url = "{urlItem}"')

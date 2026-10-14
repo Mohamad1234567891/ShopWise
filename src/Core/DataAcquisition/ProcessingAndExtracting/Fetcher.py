@@ -178,7 +178,8 @@ class Fetcher:
             if self.browser or self.browserFailed:
                 return self.browser is not None
             try:
-                print("[*] Starting the browser (needed for JavaScript pages)...")
+                if Settings.VERBOSE:
+                    print("[*] Starting the browser")
                 from playwright.async_api import async_playwright
 
                 self.playwright = await async_playwright().start()
