@@ -23,7 +23,7 @@ The validation function checks rating and price ranges, review counts, and negat
 
 Each algorithm uses a different scoring strategy, allowing the resulting product scores to be compared under different review counts, negative-review levels, and price conditions.
 
-## 2. Product Data Handling and Ranking — `DataExtractor.py`
+## 2. Product Data Handling and Ranking — `Translator.py`
 
 I implemented JSON-based product data management using `Assets/UserData.json`.
 
