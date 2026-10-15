@@ -56,6 +56,24 @@ def CleanSortURL(url):
     return f"{host}{parsed.path.rstrip('/')}" + (f"?{query}" if query else "")#stitching back everything together
 
 
+def LooksLikeSearchURL(url):
+    """Returns True when the URL points to a site's search-results page.
+
+    Examples:
+        https://www.hepsiburada.com/ara?q=huawei  -> True
+        https://www.trendyol.com/sr?q=huawei     -> True
+        https://www.amazon.com/s?k=huawei        -> True
+        https://www.store.com/item/123           -> False
+    """
+    parsed = urlparse(url)
+    queryKeys = {key.lower() for key, _ in parse_qsl(parsed.query, keep_blank_values=True)}
+    if queryKeys & {"q", "s", "k", "text", "query", "keywords", "search", "search_query", "nkw", "_nkw"}:
+        return True
+    return bool(re.search(
+        r"/(?:search|sr|ara|arama|arar|sch|suche|recherche|busqueda|busca|ricerca)(?:/|$|\.html)",
+        parsed.path.lower()))
+
+
 def ExtractIDs(url, extra=()):
     """Detects and extracts IDs from a URL or from the extra parameter if provided in sku, gtin, etc. formats. returns a dictionary containing the format as the key and the
        value as the ID.

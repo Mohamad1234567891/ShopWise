@@ -14,39 +14,51 @@ BROWSER_TABS = 4  # browser tabs running at the same time
 REQUEST_TIMEOUT = 20  # seconds per download
 PRODUCT_TIME_LIMIT = 60  # seconds for one product's reviews
 VERBOSE = False  # print every product as JSON while running
+CLUSTER_GAP_FACTOR = 1.5  # a jump larger than 50% starts a new price cluster
+KEEP_MIN_FACTOR = 0.45  # clusters closer than this (x the main cluster median) stay in the results
+KEEP_MAX_FACTOR = 2.2  # clusters farther than this (x the main cluster median) are removed
 ##########################################################################################################################
 
-_NOT_GIVEN = object()
+NOT_GIVEN = object()
 
 
 def UpdateSettings(
-    maxProducts=_NOT_GIVEN,
-    maxSearchResults=_NOT_GIVEN,
-    getReviews=_NOT_GIVEN,
-    maxReviewPages=_NOT_GIVEN,
-    httpPerStore=_NOT_GIVEN,
-    browserTabs=_NOT_GIVEN,
-    requestTimeout=_NOT_GIVEN,
-    productTimeLimit=_NOT_GIVEN,
-    verbose=_NOT_GIVEN,
+    maxProducts=NOT_GIVEN,
+    maxSearchResults=NOT_GIVEN,
+    getReviews=NOT_GIVEN,
+    maxReviewPages=NOT_GIVEN,
+    httpPerStore=NOT_GIVEN,
+    browserTabs=NOT_GIVEN,
+    requestTimeout=NOT_GIVEN,
+    productTimeLimit=NOT_GIVEN,
+    verbose=NOT_GIVEN,
+    clusterGapFactor=NOT_GIVEN,
+    minFactor=NOT_GIVEN,
+    maxFactor=NOT_GIVEN,
 ):
-  global MAX_PRODUCTS, MAX_SEARCH_RESULTS, GET_REVIEWS, MAX_REVIEW_PAGES, HTTP_PER_STORE, BROWSER_TABS, REQUEST_TIMEOUT, PRODUCT_TIME_LIMIT, VERBOSE
+  global MAX_PRODUCTS, MAX_SEARCH_RESULTS, GET_REVIEWS, MAX_REVIEW_PAGES, HTTP_PER_STORE, BROWSER_TABS, REQUEST_TIMEOUT, PRODUCT_TIME_LIMIT, VERBOSE, CLUSTER_GAP_FACTOR, KEEP_MIN_FACTOR, KEEP_MAX_FACTOR
 
-  if maxProducts is not _NOT_GIVEN and maxProducts:
+  if maxProducts is not NOT_GIVEN and maxProducts:
     MAX_PRODUCTS = maxProducts
-  if maxSearchResults is not _NOT_GIVEN and maxSearchResults:
+  if maxSearchResults is not NOT_GIVEN and maxSearchResults:
     MAX_SEARCH_RESULTS = maxSearchResults
-  if getReviews is not _NOT_GIVEN and getReviews:
+  if getReviews is not NOT_GIVEN and getReviews:
     GET_REVIEWS = getReviews
-  if maxReviewPages is not _NOT_GIVEN and maxReviewPages:
+  if maxReviewPages is not NOT_GIVEN and maxReviewPages:
     MAX_REVIEW_PAGES = maxReviewPages
-  if httpPerStore is not _NOT_GIVEN and httpPerStore:
+  if httpPerStore is not NOT_GIVEN and httpPerStore:
     HTTP_PER_STORE = httpPerStore
-  if browserTabs is not _NOT_GIVEN and browserTabs:
+  if browserTabs is not NOT_GIVEN and browserTabs:
     BROWSER_TABS = browserTabs
-  if requestTimeout is not _NOT_GIVEN and requestTimeout:
+  if requestTimeout is not NOT_GIVEN and requestTimeout:
     REQUEST_TIMEOUT = requestTimeout
-  if productTimeLimit is not _NOT_GIVEN and productTimeLimit:
+  if productTimeLimit is not NOT_GIVEN and productTimeLimit:
     PRODUCT_TIME_LIMIT = productTimeLimit
-  if verbose is not _NOT_GIVEN and verbose:
+  if verbose is not NOT_GIVEN and verbose:
     VERBOSE = verbose
+  if clusterGapFactor is not NOT_GIVEN and clusterGapFactor:
+    CLUSTER_GAP_FACTOR = clusterGapFactor
+  if minFactor is not NOT_GIVEN and minFactor:
+    KEEP_MIN_FACTOR = minFactor
+  if maxFactor is not NOT_GIVEN and maxFactor:
+    KEEP_MAX_FACTOR = maxFactor

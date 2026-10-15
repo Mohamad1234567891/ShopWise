@@ -900,6 +900,11 @@ def ProductLinksFromListing(doc, pageURL, blocks):
         if isinstance(url, str) and url.strip():
             url = UO.CleanURL(urljoin(pageURL, url.strip()))
             if url.startswith("http") and UO.GetDomainFromURL(url) == site and UO.CleanSortURL(url) != pageKey:
+                path = urlparse(url).path
+                # navigation pages (login, cart, campaigns, account, ...) and
+                # review pages are not products - never add them as candidates
+                if RE.JUNK_PATH_RE.search(path) or RE.REVIEW_LINK_RE.search(path):
+                    return
                 found.setdefault(UO.CleanSortURL(url), url)
 
     # 1. Schema.org product lists and JSON-LD nodes

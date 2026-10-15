@@ -1,6 +1,8 @@
+import math
 import statistics
 import re
 
+from src.Core import Settings
 from src.Core.DataAnalysis import SentimentAnalysis as SA
 from src.Core.DataAnalysis import Translator as T
 
@@ -19,6 +21,98 @@ def HasValidPrice(item):
   return float(match.group()) > 0  # removes 0 / 0.00
 
 
+# ------------------------------------------------------------------ price clusters
+# Accessories and unrelated products usually sit far away from the real
+# product's price, so they form their own small clusters. The scoring below
+# is anchored to the dominant cluster instead of the whole mixed set.
+# The cluster factors live in Settings.py and can be overridden from the
+# command line (-c / --cluster, --minFactor, --maxFactor).
+
+# ------------------------------------------------------------------ value score
+# A continuous "best value" score instead of coarse buckets:
+#   value = quality / priceRatio
+# quality is a Wilson lower bound of the star rating (a 5.0 with 1 review
+# never beats a 4.7 with 5000 reviews), priceRatio is the price divided by
+# the cheapest price of the main cluster. Unrated products get a quality
+# floor so they still rank sensibly (by price) when no store exposes ratings.
+QUALITY_FLOOR = 0.5        # value given to products without any rating
+REVIEW_PENALTY_FACTOR = 0.05  # subtracted per average review severity (0..3)
+
+
+def WilsonLowerBound(rating, count):
+  """Lower bound of the Wilson score interval for a 0-5 star rating with
+  'count' ratings, at 95% confidence. This is the standard way to rank rated
+  items: it punishes ratings backed by very few reviews."""
+  try:
+    ratingVal = float(rating)
+  except (ValueError, TypeError):
+    return 0.0
+  if ratingVal <= 0:
+    return 0.0
+
+  try:
+    countVal = int(float(count))
+  except (ValueError, TypeError):
+    countVal = 0
+  if countVal <= 0:
+    return 0.0
+
+  p = max(0.0, min(1.0, ratingVal / 5.0))
+  n = countVal
+  z = 1.96  # 95% confidence
+  return (p + z * z / (2 * n) - z * math.sqrt((p * (1 - p) + z * z / (4 * n)) / n)) / (1 + z * z / n)
+
+
+def PriceClusters(prices):
+  """Splits sorted prices into clusters separated by large jumps."""
+  prices = sorted(prices)
+  clusters = [[prices[0]]]
+  for price in prices[1:]:
+    if price > clusters[-1][-1] * Settings.CLUSTER_GAP_FACTOR:
+      clusters.append([price])
+    else:
+      clusters[-1].append(price)
+  return clusters
+
+
+def DominantPriceCluster(parsedData):
+  """Returns the main cluster (list of prices) when one clearly dominates.
+
+  'Clearly dominates' means it is big enough to trust (at least 3 members and
+  at least 40% of the items) and it is the cluster of the best name-match, so
+  a flood of accessory results can never hijack the real product. Returns None
+  when prices look uniform or ambiguous - callers then fall back to the old
+  global-quartile behavior."""
+
+  prices = [val for _, val in parsedData]
+  if len(prices) < 2:
+    return None
+
+  clusters = PriceClusters(prices)
+  if len(clusters) < 2:
+    return None  # one uniform cluster: nothing to separate
+
+  bySize = max(clusters, key=len)
+
+  # Prefer the cluster that contains the best name-match (the "relevance" key
+  # is set by RelevanceAnalysis.FilterProducts) unless that cluster is tiny.
+  main = bySize
+  hasRelevance = any("relevance" in item for item, _ in parsedData)
+  if hasRelevance:
+    bestRel = max((item.get("relevance", 0.6) for item, _ in parsedData), default=0.6)
+    for item, val in parsedData:
+      if item.get("relevance", 0.6) == bestRel:
+        bestCluster = next((c for c in clusters if val in c), None)
+        if bestCluster is not None and (len(bestCluster) >= 3 or len(bestCluster) >= 0.25 * len(bySize)):
+          main = bestCluster
+        break
+
+  if len(main) < 3 or len(main) < 0.4 * len(prices):
+    return None  # not dominant enough to trust
+
+  return main
+
+
 def AssignPoints(storeList):
   if not storeList:
     return storeList
@@ -34,96 +128,69 @@ def AssignPoints(storeList):
     priceVal = float(match.group()) if match else 0.0
     parsedData.append((item, priceVal))
 
-  # 2. Extract values and sort them
-  prices = [val for _, val in parsedData]
-  sortedPrices = sorted(prices)
-  n = len(sortedPrices)
-
+  n = len(parsedData)
   if n == 0:
     return storeList
 
-  # 3. Calculate Quartiles and IQR
-  q2 = statistics.median(sortedPrices)
+  # 2. When one price cluster clearly dominates, it represents the product the
+  #    user actually searched for. The value score below is anchored to THAT
+  #    cluster, so cheap accessories (or crazy bundles) can no longer shift the
+  #    results. Items in far-away clusters are removed entirely, nearby
+  #    clusters (other variants, storage sizes...) stay but get a price penalty.
+  mainCluster = DominantPriceCluster(parsedData)
 
-  mid = n // 2
-  if n % 2 == 0:
-    lowerHalf = sortedPrices[:mid]
-    upperHalf = sortedPrices[mid:]
+  if mainCluster is not None:
+    mainMedian = statistics.median(mainCluster)
+    keepMin, keepMax = mainMedian * Settings.KEEP_MIN_FACTOR, mainMedian * Settings.KEEP_MAX_FACTOR
+    parsedData = [(item, val) for item, val in parsedData if keepMin <= val <= keepMax]
+    storeList = [item for item, _ in parsedData]
+    sortedPrices = sorted(mainCluster)
   else:
-    lowerHalf = sortedPrices[:mid]
-    upperHalf = sortedPrices[mid + 1 :]
+    sortedPrices = sorted(val for _, val in parsedData)
 
-  q1 = statistics.median(lowerHalf) if lowerHalf else q2
-  q3 = statistics.median(upperHalf) if upperHalf else q2
+  if not sortedPrices:
+    return storeList
 
-  iqr = q3 - q1
-  lowerBound = q1 - 1.5 * iqr
-  upperBound = q3 + 1.5 * iqr
+  mainValues = set(mainCluster) if mainCluster is not None else None
+  clusterMin = sortedPrices[0]
 
-  # 4. Evaluate price, rating, rating amount, and reviews for each item
+  # 3. Value score: continuous blend of price position and rating quality.
+  #    A higher value score = better deal. The best deal becomes gold, the
+  #    cheapest stays blue, and the lowest scores become red.
   for item, priceVal in parsedData:
-    # --- Price Points Calculation ---
-    if priceVal < lowerBound or priceVal > upperBound:
-      pricePoints = 0  # Outlier
-    elif priceVal <= q1:
-      pricePoints = 3  # Quartile 1
-    elif priceVal <= q2:
-      pricePoints = 2  # Quartile 2
-    elif priceVal <= q3:
-      pricePoints = 1  # Quartile 3
+    # --- Price ratio (1.0 = cheapest in the main cluster) ---
+    if mainValues is not None and priceVal not in mainValues:
+      priceRatio = 2.0    # nearby cluster (another variant): treat as twice the price
+    elif clusterMin > 0:
+      priceRatio = max(1.0, priceVal / clusterMin)
     else:
-      pricePoints = 0  # Quartile 4
+      priceRatio = 1.0
 
-    # --- Rating Points Calculation ---
-    try:
-      ratingVal = float(item.get("rating", 0.0))
-    except (ValueError, TypeError):
-      ratingVal = 0.0
+    # --- Quality: Wilson lower bound of the rating (0..1) ---
+    qualityScore = WilsonLowerBound(item.get("rating"), item.get("ratingAmount"))
+    qualityScore = max(qualityScore, QUALITY_FLOOR)
 
-    if ratingVal > 4.0:
-      ratingPoints = 3
-    elif ratingVal > 3.5:
-      ratingPoints = 2
-    elif ratingVal > 3.0:
-      ratingPoints = 1
-    else:
-      ratingPoints = 0
+    # --- Review sentiment penalty (0 positive .. 3 severely negative) ---
+    reviewList = item.get("review", item.get("reviews", []))
+    reviewPenalty = 0.0
+    if isinstance(reviewList, list) and reviewList:
+      try:
+        translated = T.translate_reviews_to_english(reviewList)
+        severities = [SA.evaluate_review(text) for text in translated
+                      if isinstance(text, str) and text.strip()]
+        if severities:
+          reviewPenalty = REVIEW_PENALTY_FACTOR * (sum(severities) / len(severities))
+      except Exception:
+        reviewPenalty = 0.0
 
-    # --- Rating Amount Points Calculation ---
-    try:
-      ratingAmountVal = int(float(item.get("ratingAmount", 0)))
-    except (ValueError, TypeError):
-      ratingAmountVal = 0
-
-    if ratingAmountVal > 1000:
-      ratingAmountPoints = 3
-    elif ratingAmountVal > 500:
-      ratingAmountPoints = 2
-    elif ratingAmountVal > 100:
-      ratingAmountPoints = 1
-    else:
-      ratingAmountPoints = 0
-
-    # --- Review Points Calculation ---
-    reviewList = item.get("review", [])
-    reviewPoints = 0
-    if isinstance(reviewList, list):
-      for reviewText in reviewList:
-        # Calls your evaluate_review function for each review string
-        text = T.translate_reviews_to_english(reviewText)
-        reviewScore = SA.evaluate_review(text)
-        reviewPoints += reviewScore
-
-    # Total points combined from all metrics
-    totalPoints = (
-        pricePoints + ratingPoints + ratingAmountPoints + reviewPoints
-    )
+    # --- Total value ---
+    valueScore = qualityScore / priceRatio - reviewPenalty
 
     # --- Update 'points' Key ---
     if "points" in item:
-      item["points"] += totalPoints
+      item["points"] += valueScore
     else:
-      item["points"] = totalPoints
+      item["points"] = valueScore
 
   return storeList
 

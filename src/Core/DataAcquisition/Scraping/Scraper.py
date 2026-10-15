@@ -7,10 +7,12 @@ from src.Operations import URLOperations as UO
 
 from src.Core.DataAcquisition.ProcessingAndExtracting import DataProcessing as DP
 
-from src.Core.DataAcquisition.Scraping import Search
+from src.Core.DataAcquisition.Scraping import FindRegion
 from src.Core.DataAcquisition.ProcessingAndExtracting.Fetcher import Fetcher
 from src.Core.DataAcquisition.ProcessingAndExtracting import ProductPage
 from src.Core.DataAcquisition.ProcessingAndExtracting import ProductReviewExtractor as PE
+
+from src.Core.DataAnalysis import RelevanceAnalysis as RA
 
 
 async def ScrapeOneStore(fetcher, url, store, progress):
@@ -37,11 +39,20 @@ async def ScrapeOneStore(fetcher, url, store, progress):
 
     pdpLinks = await TO.ParallelDispatch(DP.ExtractListingLinks, listing["html"], listing["url"], listing["json"])
 
-    # Fallback: If no catalog links are found, the target URL might be a standalone product page
-    if not pdpLinks:
+    # If the fetched page is itself a product page (not a search listing),
+    # include it as a candidate too - the discovery often lands directly on
+    # the product page, and its own product data is the most relevant offer.
+    single = None
+    if not UO.LooksLikeSearchURL(listing["url"]):
         single = await TO.ParallelDispatch(ProductPage.ExtractProductPage, listing["html"], listing["url"], listing["json"])
         if (single["productName"] or single["pageTitle"]) and single["price"]:
-            pdpLinks = [listing["url"]]
+            knownLinks = {UO.CleanSortURL(link) for link in pdpLinks}
+            if UO.CleanSortURL(listing["url"]) not in knownLinks:
+                pdpLinks.insert(0, listing["url"])
+
+    # Fallback: If no catalog links are found, the target URL might be a standalone product page
+    if not pdpLinks and single is not None and (single["productName"] or single["pageTitle"]) and single["price"]:
+        pdpLinks = [listing["url"]]
 
     # Fallback: If raw HTTP missed content due to client-side JS rendering, escalate to a headless browser
     if not pdpLinks and listing["via"] == "http" and not fetcher.browserFailed:
@@ -115,7 +126,7 @@ async def StartScraping(query):
         return
 
 
-    urls = Search.GetRegionalStoreUrls(query)
+    urls = FindRegion.GetRegionalStoreUrls(query)
 
     TO.StartHelpers()
     stores = [{"url": u, "domain": UO.GetDomainFromURL(u), "results": [], "reviewApi": PE.ProductReviewExtractor()} for u in urls]
@@ -136,5 +147,11 @@ async def StartScraping(query):
     finally:
         TO.StopHelpers()
         products = GetResultsOfStores(stores)
+
+    # Drop products that clearly do not match the searched query (other
+    # models, unrelated listings). Accessories are still kept when the user
+    # actually searches for one - they only lose against the real product
+    # later, in the price-cluster logic of StatisticalAnalysis.
+    products = RA.FilterProducts(products, query)
 
     return products, stats

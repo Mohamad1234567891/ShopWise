@@ -40,6 +40,7 @@ STATE_NAME_RE = re.compile(r"state|data|props|store|product|catalog|listing|sear
 JUNK_PATH_RE = re.compile(r"/(?:cart|basket|sepet|sepetim|checkout|login|signin|sign-in|giris|register|uye-ol|account|"
                           r"hesabim|my-account|wishlist|favorites|favoriler|compare|karsilastir|help|yardim|"
                           r"customer-service|contact|iletisim|privacy|cookie|blog|magaza|satici|brand|marka|"
+                          r"campaign|campaigns|kampanya|kampanyalar|membership|uyelik|"
                           r"product-reviews|reviews|yorumlar)(?:[/?#.]|$)", re.I)
 
 HASH_RE = re.compile(r"^(?=[A-Za-z0-9]*\d)[A-Za-z0-9]{5,}$")
@@ -86,3 +87,10 @@ TRACKER_RE = re.compile(r"^https?://[^/?#]*(?:google-analytics\.com|googletagman
                         r"hotjar|criteo|segment\.(?:io|com)|clarity\.ms|tiktok|snapchat|bat\.bing\.com|newrelic|"
                         r"nr-data\.net|mc\.yandex|googlesyndication\.com|googleadservices\.com|amazon-adsystem\.com|"
                         r"adnxs\.com|taboola\.com|outbrain\.com|scorecardresearch\.com)[^/?#]*(?:[/?#]|$)", re.I)
+
+# Years in titles ("2024 edition") are not model numbers.
+YEAR_RE = re.compile(r"^(?:19|20)\d{2}$")
+
+# Detects Latin letters/digits inside a run, to tell Latin runs (where exact
+# equality is required) from non-Latin runs (where substring is enough).
+LATIN_CHAR_RE = re.compile(r"[a-z0-9]")

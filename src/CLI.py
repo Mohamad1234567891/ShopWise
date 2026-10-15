@@ -17,7 +17,7 @@ from src.GUI.Core import Window
 async def main():
     args = AP.parseArguments()
 
-    Settings.UpdateSettings(args.maxProducts, args.maxSearch, args.getReviews, args.maxPages, args.HTTPPerStore, args.browserTabs, args.requestTimeout, args.productTimeLimit, args.verbose)
+    Settings.UpdateSettings(args.maxProducts, args.maxSearch, args.getReviews, args.maxPages, args.HTTPPerStore, args.browserTabs, args.requestTimeout, args.productTimeLimit, args.verbose, args.cluster, args.minFactor, args.maxFactor)
 
     if args.productName.lower() == "gui":
         Window.StartGUI()

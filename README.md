@@ -36,7 +36,7 @@ ShopWise is a cross-store product comparison engine that finds a product on the 
 ShopWise automates the entire product-research workflow:
 
 1. It **detects your country** automatically and picks a curated list of popular online stores for that region.
-2. It **finds the product** on each store using DuckDuckGo search.
+2. It **maps every regional store** to its own search page using built-in templates and finds the product on each one.
 3. It **scrapes every listing and product page** concurrently, extracting the product name, price, rating, review count, image and customer reviews.
 4. It **analyzes the results** — translating reviews to English, scoring their sentiment, and combining price, rating and review data into a single ranking.
 5. It **presents a ranked comparison** in a beautiful terminal table (or a graphical interface), with the best overall value first.
@@ -45,11 +45,11 @@ ShopWise automates the entire product-research workflow:
 
 ## Features
 
-- 🌍 **Region-aware store discovery** — auto-detects your country (IP geolocation) and searches a curated list of 150+ store domains across 35+ regions worldwide.
+- 🌍 **Region-aware store discovery** — auto-detects your country (IP geolocation) and hits a curated list of 150+ store domains across 35+ regions directly through their own search pages, with no search engine in between.
 - ⚡ **Dual fetching engine** — ultra-fast HTTP requests that impersonate Google Chrome (`curl_cffi`), with automatic fallback to a stealth headless browser (Playwright/Chromium) whenever a store's anti-bot protection blocks plain requests.
 - 🧲 **Deep product extraction** — pulls structured data from JSON-LD, microdata, embedded JSON and DOM heuristics, so it works even on stores without consistent markup.
 - 💬 **Review intelligence** — crawls paginated reviews, clicks "show more" buttons in the browser, **learns each store's internal review API** and reuses it for the remaining products, translates reviews to English, and scores their sentiment.
-- 🏆 **Smart ranking** — every product is scored on price position (quartiles & IQR), rating, rating volume and review sentiment, then color-coded: **gold** (best overall), **blue** (cheapest), **red** (lowest scores) and white.
+- 🏆 **Smart ranking** — every product earns a continuous **value score** (`rating quality ÷ price ratio − review penalty`), then gets color-coded: **gold** (best value), **blue** (cheapest), **red** (lowest scores) and white. Colors only show in GUI mode.
 - 🖥️ **Interactive CLI** — a rich, colorized results table; type a product's number to open its store page directly in your browser.
 - 🎨 **Modern GUI** — a polished PySide6 desktop interface with a live search bar, product cards, loading states and smooth scrolling, powered by the same scraping engine as the CLI.
 - 🧵 **Concurrency & rate control** — per-store request slots, browser-tab limits, priority-based task scheduling and per-request/per-product timeouts keep scraping fast while staying polite to the stores.
@@ -60,7 +60,7 @@ ShopWise automates the entire product-research workflow:
 ## How It Works
 
 ```
-CLI arguments ──► Region auto-detection ──► Store discovery (DuckDuckGo)
+CLI arguments ──► Region auto-detection ──► Store search pages (built-in templates)
                                                     │
                                                     ▼
    Ranked results ◄── Scoring & sentiment analysis ◄── Review collection
@@ -71,7 +71,7 @@ CLI arguments ──► Region auto-detection ──► Store discovery (DuckDuc
 
 1. **Parse arguments** — the product name, limits and timeouts are read from the command line (entering `GUI` as the name opens the graphical interface instead).
 2. **Detect region** — the user's country code is resolved via `ipapi.co` and mapped to a regional store list.
-3. **Discover stores** — DuckDuckGo is queried per store (in parallel) to locate each store's search-results URL for the product.
+3. **Resolve stores** — the user's region is detected and every regional store is mapped instantly to its search-results URL using the built-in templates.
 4. **Scrape listings** — each listing page is fetched (fast HTTP first, headless Chromium fallback), lazy-loaded content is scrolled in, and all product links are extracted.
 5. **Process products** — every product page is fetched concurrently; name, price, rating, review count, image and reviews are extracted and merged from every available source.
 6. **Collect reviews** — review tabs are clicked, "load more" buttons are pressed, review pages are paginated, and store review APIs are learned and reused.
@@ -87,7 +87,7 @@ CLI arguments ──► Region auto-detection ──► Store discovery (DuckDuc
 | Language         | Python 3.10+ (`asyncio`, `multiprocessing`, `argparse`) |
 | Fast HTTP        | `curl_cffi` (Chrome impersonation), `httpx`, `requests` |
 | Browser fallback | `Playwright` (headless Chromium, stealth flags) |
-| Store discovery  | `ddgs` (DuckDuckGo search) |
+| Store discovery  | Direct store search-page templates (no search engine) |
 | HTML parsing     | `lxml`, `bs4` (BeautifulSoup) |
 | CLI rendering    | `rich` |
 | GUI              | `PySide6` (Qt for Python) |
@@ -127,9 +127,10 @@ ShopWise/
 │   │   │   │   ├── ProductPage.py          # Product data extraction & review pagination
 │   │   │   │   └── ProductReviewExtractor.py # Learns & reuses store review APIs
 │   │   │   └── Scraping/
-│   │   │       ├── Search.py               # DuckDuckGo store-URL discovery
+│   │   │       ├── FindRegion.py           # Region detection & store search-page templates
 │   │   │       └── Scraper.py              # Scraping pipeline shared by the CLI and the GUI
 │   │   └── DataAnalysis/
+│   │       ├── RelevanceAnalysis.py        # Query-aware product-name matching
 │   │       ├── SentimentAnalysis.py        # VADER-based review sentiment scoring
 │   │       ├── StatisticalAnalysis.py      # Scoring, ranking & color-coding
 │   │       └── Translator.py               # Detects & translates reviews to English
@@ -193,7 +194,7 @@ The script will:
 4. Install all dependencies from `requirements.txt`.
 5. Install the Playwright **Chromium** browser used by the scraper.
 6. Download the NLTK language resources used by the sentiment analysis.
-7. Ask whether to install the optional **Argos Translate** language models for review translation (default: **yes** — just press Enter).
+7. Ask whether to install the optional **Argos Translate** language models for review translation (default: **yes** — just press Enter). Installing Translations would give better results, because it translates people's product reviews for analysis which would then be used in ranking the product.
 8. Verify that every dependency imports correctly.
 
 You can also control step 7 from the command line:
@@ -207,19 +208,19 @@ When the script finishes, the setup is complete — activate the environment and
 
 > ✋ **Prefer to do everything by hand?** You can skip this section entirely and follow the [manual setup instructions](#manual-setup) below — `Setup.py` simply automates those same steps.
 
-> ⚠️ **Seeing `ModuleNotFoundError: No module named 'ddgs'` when running ShopWise?**
+> ⚠️ **Seeing a `ModuleNotFoundError: No module named ...` when running ShopWise?**
 >
-> If, after the setup, you try to run ShopWise with something like `python -m src.CLI "iphone 17"` and get this error (or a similar "No module named ..." error):
+> If, after the setup, you try to run ShopWise with something like `python -m src.CLI "iphone 17"` and get an error like this (any "No module named ..." dependency, for example `requests`, `PySide6`, or `curl_cffi`):
 >
 > ```
 > Traceback (most recent call last):
 >   File "<frozen runpy>", line 203, in _run_module_as_main
 >   File "<frozen runpy>", line 88, in _run_code
 >   File ".../ShopWise/src/CLI.py", line 8, in <module>
->     from src.Core.DataAcquisition.Scraping import Search
->   File ".../ShopWise/src/Core/DataAcquisition/Scraping/Search.py", line 11, in <module>
->     from ddgs import DDGS
-> ModuleNotFoundError: No module named 'ddgs'
+>     from src.Core.DataAcquisition.Scraping import Scraper
+>   File ".../ShopWise/src/Core/DataAcquisition/Scraping/Scraper.py", line 10, in <module>
+>     from src.Core.DataAcquisition.Scraping import FindRegion
+> ModuleNotFoundError: No module named 'requests'
 > ```
 >
 > it means the virtual environment is **not active** — the packages were installed inside `.venv`, so Python must run from inside it. Activate the environment first, depending on your operating system and terminal:
@@ -387,6 +388,7 @@ python3 -m src.CLI GUI                   # opens the graphical user interface
 
 ```
 usage: python -m src.CLI [-h] [--maxProducts N] [--maxSearch N] [-g] [--maxPages N] [--HTTPPerStore N] [-b N] [-r SECONDS] [-p SECONDS] [-v]
+                         [-c FACTOR] [--minFactor FACTOR] [--maxFactor FACTOR]
                          PRODUCT_NAME [PRODUCT_NAME ...]
 
 ShopWise - search a product across stores and compare results.
@@ -408,6 +410,9 @@ options:
   -p, --productTimeLimit SECONDS
                         time limit for processing a single product, in seconds
   -v, --verbose         enable verbose output
+  -c, --cluster FACTOR  price gap (x) that starts a new price cluster (default: 1.5)
+  --minFactor FACTOR    keep clusters priced above this x the main cluster median (default: 0.45)
+  --maxFactor FACTOR    keep clusters priced below this x the main cluster median (default: 2.2)
 ```
 
 ### Examples
@@ -424,6 +429,9 @@ python -m src.CLI "gaming mouse" --maxProducts 10 -g
 
 # Scan up to 3 pages per store with 4 browser tabs and a 20s request timeout
 python -m src.CLI laptop --maxPages 3 -b 4 -r 20 -v
+
+# Tune the price-cluster logic (gap factor, min/max keep factors)
+python -m src.CLI "huawei matepad 12x" -c 2.0 --minFactor 0.5 --maxFactor 3.0
 ```
 
 > Product names with spaces can be written with or without quotes — `iphone 15` and `"iphone 15"` are equivalent.
@@ -432,14 +440,15 @@ python -m src.CLI laptop --maxPages 3 -b 4 -r 20 -v
 
 ## How Products Are Scored
 
-Each product earns points across four dimensions:
+Every product that survives the relevance and price-cluster filters earns a continuous **value score**:
 
-1. **Price position** — prices are split into quartiles and checked for outliers (IQR rule). The best-priced offers (lowest quartile) earn the most points; outliers earn none.
-2. **Rating** — higher average ratings (out of 5) earn more points.
-3. **Rating volume** — a larger number of ratings means a more trustworthy score and earns more points.
-4. **Review sentiment** — every collected review is translated to English and analyzed for severity (positive / neutral / mildly negative / severely negative), and the results are combined into the product's total.
+1. **Price ratio** — the product's price divided by the cheapest offer in the dominant price cluster (1.0 = cheapest). Offers from nearby clusters (other storage sizes or variants) are treated as twice the price, so they cannot outrank the real product.
+2. **Rating quality** — a **Wilson lower-bound** score of the star rating. This is the standard way to rank rated items: a 5.0★ with 1 review scores far below a 4.7★ with 5000 reviews, so unreliable ratings can never win. Products without a rating get a neutral quality floor and are then ranked purely by price.
+3. **Review sentiment penalty** — reviews are translated to English and each one is classified (positive / neutral / mildly negative / severely negative); the average severity subtracts a small penalty from the value.
 
-The totals are then used to sort the results and to color-code offers: 🥇 **gold** = best overall value, 🔵 **blue** = cheapest, 🔴 **red** = the five lowest-scoring offers, ⚪ white = everything in between.**Note that these colors only appears in the GUI.**
+The final score is `value = rating quality ÷ price ratio − review penalty`, and the results are sorted from the highest value to the lowest.
+
+The colors: 🥇 **gold** = best value, 🔵 **blue** = cheapest offer, 🔴 **red** = the five lowest scores, ⚪ white = everything in between. **Note that these colors only appears in the GUI.**
 
 ---
 
