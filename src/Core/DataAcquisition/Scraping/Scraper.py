@@ -34,7 +34,8 @@ async def ScrapeOneStore(fetcher, url, store, progress):
     listing = await fetcher.get(url, renderOptions={"navigate": True})
 
     if not listing["html"] or listing["blocked"] or listing["status"] >= 400:
-        print(f"[!] Error fetching listing page {url}: {listing.get('error') or 'HTTP ' + str(listing['status'])}")
+        if Settings.VERBOSE:
+            print(f"[!] Error fetching listing page {url}: {listing.get('error') or 'HTTP ' + str(listing['status'])}")
         return
 
     pdpLinks = await TO.ParallelDispatch(DP.ExtractListingLinks, listing["html"], listing["url"], listing["json"])

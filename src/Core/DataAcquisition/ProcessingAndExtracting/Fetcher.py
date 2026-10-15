@@ -88,7 +88,8 @@ class Fetcher:
                 page.get("error") or "")  # no successful connection happened, likely an anti-bot has blocked us
         if (page["blocked"] or dropped) and not self.browserFailed:
             if domain not in self.browserOnly:
-                print(f"  [!] {domain} blocks plain HTTP requests -> using the browser for this store")
+                if Settings.VERBOSE:
+                    print(f"  [!] {domain} blocks plain HTTP requests -> using the browser for this store")
                 self.browserOnly.add(
                     domain)  # Adding this domain to the browserOnly set so that the next time we immediately use the browser
 
