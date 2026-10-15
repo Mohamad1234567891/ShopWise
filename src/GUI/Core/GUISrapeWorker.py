@@ -1,5 +1,5 @@
 import asyncio
-from PySide6.QtCore import Qt, QThread, Signal   # PyQt: use pyqtSignal instead of Signal
+from PySide6.QtCore import QThread, Signal   # PyQt: use pyqtSignal instead of Signal
 from src.Core.DataAcquisition.Scraping import Scraper
 
 from src.Core.DataAnalysis import StatisticalAnalysis as SA
@@ -16,7 +16,7 @@ class ScrapeWorker(QThread):
     def run(self):
         try:
             products, stats = asyncio.run(Scraper.StartScraping(self.query))
-            products = SA.AssignPoints(products)   # same as the CLI path
+            products = SA.SortAndColorStores(SA.AssignPoints(products))   # same as the CLI path
             self.finished_ok.emit(products, stats)
         except Exception as exc:
             self.failed.emit(repr(exc))

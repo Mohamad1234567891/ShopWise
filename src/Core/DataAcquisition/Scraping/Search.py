@@ -63,11 +63,13 @@ def GetRegionalStoreUrls(searchQuery, maxResults = Settings.MAX_SEARCH_RESULTS):
 
     ddgRegion = f"{regionCode.lower()}-{regionCode.lower()}"
 
+    query = f"Buy {searchQuery}"
+
     # max_workers=4 creates 4 worker threads that pull from the queue dynamically
     with ThreadPoolExecutor(max_workers=12) as executor:
         # Submitting all stores populates the internal task queue immediately
         futureToStore = {
-            executor.submit(FetchSingleStore, storeDomain, searchQuery, ddgRegion, maxResults): storeDomain
+            executor.submit(FetchSingleStore, storeDomain, query, ddgRegion, maxResults): storeDomain
             for storeDomain in storeList
         }
 

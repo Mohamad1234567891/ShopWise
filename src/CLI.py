@@ -2,16 +2,10 @@ import asyncio
 import multiprocessing
 import time
 
-from src.Core.DataAcquisition.ProcessingAndExtracting.Fetcher import Fetcher
-from src.Core.DataAcquisition.ProcessingAndExtracting import ProductReviewExtractor as PE
 from src.Core.DataAcquisition.Scraping import Scraper
-from src.Core.DataAcquisition.Scraping import Search
 from src.Core.DataAcquisition import AsyncSession as AM
 
 from src.Core import Settings, CLIRenderer
-
-from src.Operations import URLOperations as UO
-from src.Operations import ThreadOperations as TO
 
 from src.Core.DataAnalysis import StatisticalAnalysis as SA
 from src.Core import ArgumentsParser as AP
@@ -23,11 +17,12 @@ from src.GUI.Core import Window
 async def main():
     args = AP.parseArguments()
 
+    Settings.UpdateSettings(args.maxProducts, args.maxSearch, args.getReviews, args.maxPages, args.HTTPPerStore, args.browserTabs, args.requestTimeout, args.productTimeLimit, args.verbose)
+
     if args.productName.lower() == "gui":
         Window.StartGUI()
         return
 
-    Settings.UpdateSettings(args.maxProducts, args.maxSearch, args.getReviews, args.maxPages, args.HTTPPerStore, args.browserTabs, args.requestTimeout, args.productTimeLimit, args.verbose)
 
     startTime = time.perf_counter()
     if Settings.VERBOSE:

@@ -89,8 +89,7 @@ class Window(QMainWindow):
         self.worker.start()
 
     def on_results(self, products, stats):
-        givenPointsProducts = SA.SortAndColorStores(SA.AssignPoints(products))
-        for product in givenPointsProducts:
+        for product in products:
             card = ProductCard(product["storeName"], product["productName"], product["imageURL"], product["price"], product["rating"], "view Offer", product["productURL"], product["color"])
             self.scroll_container.add_item(card)
 
