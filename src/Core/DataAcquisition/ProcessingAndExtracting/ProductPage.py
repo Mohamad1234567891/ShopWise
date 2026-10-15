@@ -581,7 +581,7 @@ async def CollectReviewPages(fetcher, firstURL, referer, into):
     found, limit = [], Settings.MAX_REVIEW_PAGES or 200
 
     async def ReadPage(url):
-        page = await fetcher.get(url, referer=referer, renderOptions={"scroll": True, "openReviews": True})
+        page = await fetcher.get(url, referer=referer, renderOptions={"navigate": True, "openReviews": True})
         if not page["html"] or page["status"] >= 400:
             return None, None
         return page, await TO.ParallelDispatch(ReviewsOnPage, page["html"], page["url"], page["json"])

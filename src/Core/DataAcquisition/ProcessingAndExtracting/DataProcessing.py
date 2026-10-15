@@ -80,7 +80,7 @@ async def ProcessProduct(fetcher, store, index, pdpURL, listingURL, progress):
     """
     try:
         # Prioritize new product requests behind active review loads to manage queue flow
-        page = await fetcher.get(pdpURL, referer=listingURL, renderOptions={"scroll": True, "openReviews": True}, priority=Constants.NEXT)
+        page = await fetcher.get(pdpURL, referer=listingURL, renderOptions={"navigate": True, "openReviews": True}, priority=Constants.NEXT)
 
         if not page["html"] or page["blocked"] or page["status"] >= 400:
             reason = page.get("error") or ("blocked by the store" if page["blocked"] else f"HTTP {page['status']}")

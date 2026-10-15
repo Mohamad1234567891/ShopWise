@@ -38,14 +38,6 @@ def parseArguments(argv: list[str] | None = None) -> argparse.Namespace:
         metavar="PRODUCT_NAME",
         help="name of the product to search for (quotes are optional for multiple words)",
     )
-    parser.add_argument(
-        "-m", "--mode",
-        required=True,
-        type=str.upper,
-        choices=["CLI", "GUI"],
-        help="interface to run: CLI or GUI (case-insensitive)",
-    )
-
     parser.add_argument("--maxProducts", type=_positiveInt, metavar="N",
                         help="maximum number of products to return")
     parser.add_argument("--maxSearch", type=_positiveInt, metavar="N",

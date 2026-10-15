@@ -438,3 +438,10 @@ def IsOpinionText(text):
         not re.search(r"function\s*\(|=>\s*\{|\bvar\s+\w+\s*=|\{\s*\"\w+\"\s*:", text)
 
 
+def ToFloat(value):
+    try:
+        return float(str(value).replace(",", ".").strip())
+    except (ValueError, TypeError):
+        return None
+
+

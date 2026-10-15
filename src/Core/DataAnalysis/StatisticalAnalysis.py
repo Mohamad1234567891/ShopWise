@@ -143,36 +143,40 @@ def SortAndColorStores(storeList):
     return item.get("points", 0)
 
   items = list(storeList)
-  if not items:
-    return items
 
   # 1. Find the item with the most points (Gold / Index 0)
   goldItem = max(items, key=GetPoints)
 
   # 2. Find the cheapest item (Blue / Index 1)
-  remainingForCheapest = [it for it in items if it != goldItem]
-  if remainingForCheapest:
-    cheapestItem = min(remainingForCheapest, key=GetPriceVal)
-  else:
-    cheapestItem = goldItem
+  remainingForCheapest = [it for it in items if it is not goldItem]
+  cheapestItem = (
+      min(remainingForCheapest, key=GetPriceVal)
+      if remainingForCheapest
+      else None
+  )
 
-  # 3. Identify the 5 items with the least points (Red)
+  # 3. Identify the 5 items with the least points (Red), tracked by id()
   sortedByPointsAsc = sorted(items, key=GetPoints)
-  redItems = set(sortedByPointsAsc[:5])
+  redIds = {id(it) for it in sortedByPointsAsc[:5]}
 
   # 4. Build the ordered list
-  middleItems = [it for it in items if it != goldItem and it != cheapestItem]
+  middleItems = [
+      it for it in items if it is not goldItem and it is not cheapestItem
+  ]
   middleItems.sort(key=GetPoints, reverse=True)
 
-  orderedList = [goldItem, cheapestItem] + middleItems
+  orderedList = [goldItem]
+  if cheapestItem is not None:
+    orderedList.append(cheapestItem)
+  orderedList.extend(middleItems)
 
   # 5. Assign colors (Gold > Blue > Red > White)
   for item in orderedList:
-    if item == goldItem:
+    if item is goldItem:
       item["color"] = "gold"
-    elif item == cheapestItem:
+    elif item is cheapestItem:
       item["color"] = "blue"
-    elif item in redItems:
+    elif id(item) in redIds:
       item["color"] = "red"
     else:
       item["color"] = "white"

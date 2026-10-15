@@ -77,3 +77,15 @@ class ScrollContainer(QScrollArea):
             row = index // columns
             col = index % columns
             self.grid_layout.addWidget(widget, row, col)
+
+    def clear(self):
+        while self.grid_layout.count() > 0:
+            self.grid_layout.takeAt(0)
+
+        for widget in self.items:
+            widget.cancel_image()
+            widget.hide()
+            widget.deleteLater()
+        self.items.clear()
+
+        self.verticalScrollBar().setValue(0)

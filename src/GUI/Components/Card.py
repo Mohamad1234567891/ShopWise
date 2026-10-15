@@ -1,13 +1,27 @@
 import webbrowser
 from PySide6.QtWidgets import (
-    QFrame, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QGraphicsDropShadowEffect
+    QApplication, QFrame, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QGraphicsDropShadowEffect
 )
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QPixmap, QColor
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 
+from src.Operations import StringOperations as SO
+
 
 class ProductCard(QFrame):
+    # One network manager shared by all cards (instead of one per card)
+    _network_manager = None
+
+    @classmethod
+    def _get_manager(cls):
+        if cls._network_manager is None:
+            cls._network_manager = QNetworkAccessManager(QApplication.instance())
+            cls._network_manager.setRedirectPolicy(
+                QNetworkRequest.RedirectPolicy.NoLessSafeRedirectPolicy
+            )
+        return cls._network_manager
 
     def __init__(
         self,
@@ -23,7 +37,8 @@ class ProductCard(QFrame):
     ):
         super().__init__(parent)
         self.button_url = button_url
-        self.color_theme = color.lower()
+        self.color_theme = str(color or "white").lower()
+        self.reply = None
         self.setFixedSize(280, 450)
 
         # Base card styling & glow colors based on theme
@@ -38,7 +53,6 @@ class ProductCard(QFrame):
             self.title_color = "#1e293b"
             self.store_color = "#475569"
             self.price_color = "#0f172a"
-            # Blue ambient glow
             self.base_glow_color = QColor(59, 130, 246, 60)
             self.hover_glow_color = QColor(59, 130, 246, 170)
         elif self.color_theme == "gold":
@@ -52,7 +66,6 @@ class ProductCard(QFrame):
             self.title_color = "#713f12"
             self.store_color = "#854d0e"
             self.price_color = "#713f12"
-            # Gold ambient glow
             self.base_glow_color = QColor(234, 179, 8, 60)
             self.hover_glow_color = QColor(234, 179, 8, 170)
         elif self.color_theme == "red":
@@ -66,7 +79,6 @@ class ProductCard(QFrame):
             self.title_color = "#7f1d1d"
             self.store_color = "#991b1b"
             self.price_color = "#7f1d1d"
-            # Red ambient glow
             self.base_glow_color = QColor(239, 68, 68, 60)
             self.hover_glow_color = QColor(239, 68, 68, 170)
         else:
@@ -80,11 +92,10 @@ class ProductCard(QFrame):
             self.title_color = "#0f172a"
             self.store_color = "#64748b"
             self.price_color = "#0f172a"
-            # White / soft-light glow
             self.base_glow_color = QColor(255, 255, 255, 25)
             self.hover_glow_color = QColor(255, 255, 255, 140)
 
-        #  Ambient Glow Effect
+        # Ambient Glow Effect
         self.shadow = QGraphicsDropShadowEffect(self)
         self.shadow.setBlurRadius(15)
         self.shadow.setXOffset(0)
@@ -109,10 +120,10 @@ class ProductCard(QFrame):
         """)
         self.main_layout.addWidget(self.image_label)
 
-        self._load_image(image_url)
+        self._load_image(str(image_url or ""))
 
-        #  Store Name
-        self.store_label = QLabel(store_name.upper())
+        # Store Name
+        self.store_label = QLabel(str(store_name or "").upper())
         self.store_label.setStyleSheet(f"""
             QLabel {{
                 color: {self.store_color};
@@ -124,8 +135,8 @@ class ProductCard(QFrame):
         """)
         self.main_layout.addWidget(self.store_label)
 
-        #  Product Title
-        self.title_label = QLabel(product_name)
+        # Product Title
+        self.title_label = QLabel(str(product_name or ""))
         self.title_label.setWordWrap(True)
         self.title_label.setFixedHeight(36)
         self.title_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
@@ -140,7 +151,7 @@ class ProductCard(QFrame):
         """)
         self.main_layout.addWidget(self.title_label)
 
-        #  Warnings / Badges Layout (Stacked Vertically)
+        # Warnings / Badges Layout (Stacked Vertically)
         self.tags_layout = QVBoxLayout()
         self.tags_layout.setContentsMargins(0, 2, 0, 2)
         self.tags_layout.setSpacing(4)
@@ -149,12 +160,12 @@ class ProductCard(QFrame):
 
         self.main_layout.addStretch()
 
-        #  Bottom Row: Price, Rating, Action Button
+        # Bottom Row: Price, Rating, Action Button
         bottom_row = QHBoxLayout()
         bottom_row.setContentsMargins(0, 0, 0, 0)
         bottom_row.setSpacing(8)
 
-        self.price_label = QLabel(price)
+        self.price_label = QLabel(str(price) if price not in (None, "") else "-")
         self.price_label.setStyleSheet(f"""
             QLabel {{
                 color: {self.price_color};
@@ -165,7 +176,10 @@ class ProductCard(QFrame):
         """)
         bottom_row.addWidget(self.price_label)
 
-        self.rating_label = QLabel(f"★ {rating:.1f}")
+        ratingValue = SO.ToFloat(rating)
+        self.rating_label = QLabel(
+            f"★ {ratingValue:.1f}" if ratingValue is not None else "★ N/A"
+        )
         self.rating_label.setStyleSheet("""
             QLabel {
                 background-color: #2563eb;
@@ -222,31 +236,56 @@ class ProductCard(QFrame):
         if self.button_url:
             webbrowser.open(self.button_url)
 
+    # --- Image loading ---
+    def _show_no_image(self):
+        self.image_label.setText("No Image")
+        self.image_label.setStyleSheet(
+            "color: #64748b; background-color: #0f172a; border-radius: 12px;"
+        )
+
     def _load_image(self, url: str):
+        self.reply = None
         if not url:
-            self.image_label.setText("No Image")
-            self.image_label.setStyleSheet("color: #64748b; background-color: #0f172a; border-radius: 12px;")
+            self._show_no_image()
             return
 
-        self.network_manager = QNetworkAccessManager(self)
-        self.reply = self.network_manager.get(QNetworkRequest(QUrl(url)))
+        request = QNetworkRequest(QUrl(url))
+        request.setHeader(
+            QNetworkRequest.KnownHeaders.UserAgentHeader,
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/120 Safari/537.36",
+        )
+        request.setTransferTimeout(10000)  # 10 seconds
+
+        self.reply = self._get_manager().get(request)
         self.reply.finished.connect(self._on_image_downloaded)
+        self.reply.finished.connect(self.reply.deleteLater)
 
     def _on_image_downloaded(self):
-        if self.reply.error() == QNetworkReply.NoError:
-            image_data = self.reply.readAll()
-            pixmap = QPixmap()
-            pixmap.loadFromData(image_data)
-            scaled_pixmap = pixmap.scaled(
-                240, 140, Qt.KeepAspectRatio, Qt.SmoothTransformation
-            )
-            self.image_label.setPixmap(scaled_pixmap)
-        else:
-            self.image_label.setText("No Image")
-            self.image_label.setStyleSheet("color: #64748b; background-color: #0f172a; border-radius: 12px;")
-        self.reply.deleteLater()
+        reply, self.reply = self.reply, None
+        if reply is None:
+            return
 
-    #  Badge Helper
+        if reply.error() == QNetworkReply.NetworkError.NoError:
+            pixmap = QPixmap()
+            if pixmap.loadFromData(reply.readAll()) and not pixmap.isNull():
+                self.image_label.setPixmap(
+                    pixmap.scaled(240, 140, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                )
+                return
+        self._show_no_image()
+
+    def cancel_image(self):
+        """Abort a pending download. Call this before deleting the card."""
+        reply, self.reply = self.reply, None
+        if reply is not None:
+            try:
+                reply.finished.disconnect(self._on_image_downloaded)
+            except (TypeError, RuntimeError):
+                pass
+            reply.abort()
+
+    # --- Badge Helper ---
     def _add_tag(self, text: str, bg_color: str, text_color: str, tooltip: str = ""):
         tag = QLabel(text)
         if tooltip:
@@ -264,7 +303,7 @@ class ProductCard(QFrame):
         """)
         self.tags_layout.addWidget(tag)
 
-    #  Warning Methods
+    # --- Warning Methods ---
     def brockProdact(self):
         self._add_tag("Broken Product", "rgba(239, 68, 68, 0.15)", "#ef4444", "Damaged reports on delivery.")
 

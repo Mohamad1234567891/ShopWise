@@ -36,7 +36,7 @@ def HelperReady(future):
         HELPERS["ready"] = True
 
 
-def SartHelpers():
+def StartHelpers():
     """Initializes a multi-process worker pool for background CPU-bound tasks,
     using a safe spawn context and validating worker readiness via asynchronous callbacks.
     Falls back gracefully if process creation is restricted in the current environment.

@@ -3,7 +3,14 @@ import asyncio
 from src.Core import Settings
 
 from src.Operations import ThreadOperations as TO
-from src.Core.DataAcquisition.ProcessingAndExtracting import DataProcessing as DP, ProductPage
+from src.Operations import URLOperations as UO
+
+from src.Core.DataAcquisition.ProcessingAndExtracting import DataProcessing as DP
+
+from src.Core.DataAcquisition.Scraping import Search
+from src.Core.DataAcquisition.ProcessingAndExtracting.Fetcher import Fetcher
+from src.Core.DataAcquisition.ProcessingAndExtracting import ProductPage
+from src.Core.DataAcquisition.ProcessingAndExtracting import ProductReviewExtractor as PE
 
 
 async def ScrapeOneStore(fetcher, url, store, progress):
@@ -22,7 +29,7 @@ async def ScrapeOneStore(fetcher, url, store, progress):
         print(f"[*] Navigating to listing page: {url}")
 
     # Scroll enabled to force loading of lazy-loaded elements before extraction
-    listing = await fetcher.get(url, renderOptions={"scroll": True})
+    listing = await fetcher.get(url, renderOptions={"navigate": True})
 
     if not listing["html"] or listing["blocked"] or listing["status"] >= 400:
         print(f"[!] Error fetching listing page {url}: {listing.get('error') or 'HTTP ' + str(listing['status'])}")
@@ -87,3 +94,47 @@ async def ScrapeStore(fetcher, url, store, progress):
     except Exception as e:
         # Isolate store failures to prevent a single broken site from crashing the entire batch
         print(f"[!] {store['domain']}: stopped by an error: {type(e).__name__}: {e}")
+
+
+
+def GetResultsOfStores(stores):
+    """Takes in the stores, and returns a list of dictionaries for all products of all stores combined"""
+    products = []
+    for store in stores:
+        for _, product in store["results"]:
+            product["storeName"] = UO.GetDomainFromURL(product["productURL"])
+            products.append(product)
+
+    return products
+
+
+async def StartScraping(query):
+    """Scrapes all regional stores for the query. Returns (products, stats)."""
+    if not query or query.strip() == "":
+        print("[-] Please Enter the product you wish to buy")
+        return
+
+
+    urls = Search.GetRegionalStoreUrls(query)
+
+    TO.StartHelpers()
+    stores = [{"url": u, "domain": UO.GetDomainFromURL(u), "results": [], "reviewApi": PE.ProductReviewExtractor()} for u in urls]
+    progress = {"done": 0, "total": 0}
+    stats = {"http": 0, "browser": 0}
+    products = []
+
+    print("[*] Scraping the network, hold on this might take a few minutes...")
+
+    try:
+        async with Fetcher() as fetcher:
+            try:
+                await asyncio.gather(*(ScrapeStore(fetcher, store["url"], store, progress) for store in stores))
+            finally:
+                stats = fetcher.stats
+    except (asyncio.CancelledError, KeyboardInterrupt):
+        print("[!] Stopped by user (results collected so far were saved).")
+    finally:
+        TO.StopHelpers()
+        products = GetResultsOfStores(stores)
+
+    return products, stats
