@@ -51,7 +51,7 @@ ShopWise automates the entire product-research workflow:
 - 💬 **Review intelligence** — crawls paginated reviews, clicks "show more" buttons in the browser, **learns each store's internal review API** and reuses it for the remaining products, translates reviews to English, and scores their sentiment.
 - 🏆 **Smart ranking** — every product earns a continuous **value score** (`rating quality ÷ price ratio − review penalty`), then gets color-coded: **gold** (best value), **blue** (cheapest), **red** (lowest scores) and white.
 - 🖥️ **Interactive CLI** — a rich, colorized results table; type a product's number to open its store page directly in your browser.
-- 🎨 **Modern GUI** — a polished PySide6 desktop interface with a live search bar, product cards, loading states and smooth scrolling, powered by the same scraping engine as the CLI.
+- 🎨 **Modern GUI** — a polished PySide6 desktop interface with a live search bar, product cards, loading states, emoji-based icons and smooth scrolling, powered by the same scraping engine as the CLI.
 - 🧵 **Concurrency & rate control** — per-store request slots, browser-tab limits, priority-based task scheduling and per-request/per-product timeouts keep scraping fast while staying polite to the stores.
 - 🛡️ **Anti-bot resilience** — Chrome fingerprinting, realistic user agents, `navigator.webdriver` masking, referer spoofing, cookie sharing between the browser and HTTP sessions, and automatic block detection.
 
@@ -138,6 +138,7 @@ ShopWise/
 │   │   ├── Components/
 │   │   │   ├── Button.py                   # "View Offer" button that opens product URLs
 │   │   │   ├── Card.py                     # Product card (image, price, rating, badges)
+│   │   │   ├── EmojiIcon.py                # Draws emojis into QIcons for the UI
 │   │   │   ├── loading.py                  # Animated loading indicator
 │   │   │   ├── Scroll.py                   # Scrollable results container
 │   │   │   └── SearchBar.py                # Search bar with suggestions & signals
@@ -161,7 +162,7 @@ ShopWise/
 └── README.md
 ```
 
-> Generated folders such as `.venv/` and `__pycache__/` are git-ignored and intentionally not shown.
+> Generated folders such as `.venv/`, `__pycache__/` and `.idea/` are git-ignored and intentionally not shown.
 
 ---
 

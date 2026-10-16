@@ -4,17 +4,20 @@ from urllib.parse import urlparse
 
 from rich import box
 from rich.console import Console
+from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
 
+from src.Constants import Constants as C
 
-def _make_console() -> Console:
+
+def _make_console():
     if sys.stdout.isatty():
         return Console(force_terminal=True, color_system="standard")
     return Console()
 
 
-def _is_valid_url(url: str) -> bool:
+def _is_valid_url(url):
     try:
         parsed = urlparse(url)
     except (ValueError, AttributeError):
@@ -22,7 +25,7 @@ def _is_valid_url(url: str) -> bool:
     return parsed.scheme in ("http", "https") and bool(parsed.netloc)
 
 
-def _open_url(console: Console, url: str) -> None:
+def _open_url(console: Console, url):
     try:
         if not webbrowser.open(url, new=2):
             console.print("[yellow]Could not open a browser. Copy the link manually:[/yellow]")
@@ -31,13 +34,13 @@ def _open_url(console: Console, url: str) -> None:
         console.print(f"[red]Failed to open browser:[/red] {exc}")
 
 
-def _format_price(value) -> str:
+def _format_price(value):
     if isinstance(value, (int, float)):
         return f"{value:,.2f}"
     return str(value) if value not in (None, "") else "-"
 
 
-def FormatCount(value) -> str:
+def FormatCount(value):
     if isinstance(value, bool):
         return "-"
     if isinstance(value, (int, float)):
@@ -45,15 +48,11 @@ def FormatCount(value) -> str:
     return str(value) if value not in (None, "", "N/A") else "-"
 
 
-# The color of each row in the terminal table (same meaning as the GUI cards).
-ROW_COLORS = {
-    "gold": "gold1",
-    "blue": "blue",
-    "red": "red",
-}
+# The color of each row in the terminal table and the legend text both live
+# in Constants.py, shared with the GUI.
 
 
-def DisplayOnCli(products: list[dict]) -> None:
+def DisplayOnCli(products):
     console = _make_console()
 
     if not products:
@@ -73,7 +72,7 @@ def DisplayOnCli(products: list[dict]) -> None:
     table.add_column("Store Name", overflow="fold")
     table.add_column("Price", justify="right", no_wrap=True)
 
-    valid_urls: dict[int, str] = {}
+    valid_urls = {}
 
     for index, product in enumerate(products, start=1):
         url = str(product.get("productURL", "")).strip()
@@ -89,13 +88,24 @@ def DisplayOnCli(products: list[dict]) -> None:
             FormatCount(product.get("ratingAmount")),
             str(product.get("storeName", "-")),
             _format_price(product.get("price")),
-            style=ROW_COLORS.get(str(product.get("color", "")).lower()),
+            style=C.ROW_COLORS.get(str(product.get("color", "")).lower()),
         )
 
     console.print(table)
 
     if not console.is_terminal:
         return
+
+    # Printed once, before the interactive loop.
+    console.print()
+    console.print(
+        "[yellow]Our top products are listed first, with the best options usually found "
+        "in the top five. We recommend checking prices and reviews, as the fifth item "
+        "can sometimes outmatch the first; however, the top five will almost always "
+        "give you the best value.[/yellow]"
+    )
+    console.print(Panel(C.LEGEND_TEXT, title="Color Legend", border_style="dim", padding=(0, 2)))
+    console.print()
 
     while True:
         choice = Prompt.ask(

@@ -639,3 +639,37 @@ SEARCH_URL_TEMPLATES = {
 UNITS = {"gb", "tb", "mb", "kb", "mm", "cm", "m", "in", "inch", "hz", "mhz",
          "ghz", "mah", "w", "wh", "kg", "g", "gr", "ml", "l", "lt", "cl",
          "v", "a", "ah", "mp", "watt"}
+
+# The color of each product row in the CLI table (same meaning as the GUI
+# card colors).
+ROW_COLORS = {
+    "gold": "gold1",
+    "blue": "blue",
+    "red": "red",
+}
+
+# The legend that explains what each color means. Every entry holds:
+# (title, rich color for the CLI, hex color for the GUI, description).
+# LEGEND_TEXT (used by the CLI) is built from these entries, and the GUI
+# builds its labels from the same entries - so both interfaces always show
+# exactly the same legend text.
+LEGEND_ITEMS = [
+    ("Gold", "gold1", "#b58900",
+     "the best-value deal according to ShopWise's statistics; reliable for a "
+     "specific product, though it can still make mistakes."),
+    ("Blue", "blue", "#3b82f6",
+     "the cheapest offer. Not necessarily the best — if no row is blue, the "
+     "gold row is also the cheapest."),
+    ("White", "white", "#ffffff",
+     "an ordinary deal with nothing special."),
+    ("Red", "red", "#ef4444",
+     "the worst deals, usually due to overpricing, poor reviews, low ratings, "
+     "or even suspiciously low prices. Like gold, it can make mistakes, but "
+     "for a specific product it is mostly correct."),
+]
+
+LEGEND_TEXT = "\n".join(
+    f"[bold {richColor}]{title}[/bold {richColor}] — {description}" if richColor
+    else f"[bold]{title}[/bold] — {description}"
+    for title, richColor, htmlColor, description in LEGEND_ITEMS
+)

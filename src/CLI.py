@@ -42,8 +42,6 @@ async def main():
             print("[!] No products with a valid price were found.")
             return
 
-        print("Our top products are listed first, with the best options usually found in the top five. We recommend checking prices and reviews, as the fifth item can sometimes outmatch the first. However, the top five will almost always give you the best value.")
-
         newSearch = CLIRenderer.DisplayOnCli(givenPointsProducts)
 
         if Settings.VERBOSE:

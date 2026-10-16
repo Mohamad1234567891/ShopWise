@@ -1,9 +1,11 @@
 import sys
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QFrame, QGridLayout
 )
 from PySide6.QtCore import Qt
 
+from src.Constants import Constants as C
 from src.GUI.Components.Scroll import ScrollContainer
 from src.GUI.Components.SearchBar import SearchBar
 from src.GUI.Components.Card import ProductCard
@@ -51,6 +53,49 @@ class Window(QMainWindow):
 
         self.layout.addLayout(search_row)
         self.search_bar.search_submitted.connect(self.on_search)
+
+        # Color legend box - sits under the search bar, above the results,
+        # and never overlaps the loading hint (which appears below it).
+        # The text comes from the same constants the CLI legend uses.
+        legendBox = QFrame()
+        legendBox.setObjectName("LegendBox")
+        legendBox.setStyleSheet("""
+            QFrame#LegendBox {
+                background-color: #1e293b;
+                border: 1px solid #334155;
+                border-radius: 10px;
+            }
+        """)
+        legendGrid = QGridLayout(legendBox)
+        legendGrid.setContentsMargins(14, 10, 14, 10)
+        legendGrid.setHorizontalSpacing(14)
+        legendGrid.setVerticalSpacing(6)
+        legendGrid.setColumnStretch(0, 1)
+        legendGrid.setColumnStretch(1, 1)
+
+        for index, (title, richColor, htmlColor, description) in enumerate(C.LEGEND_ITEMS):
+            row, column = divmod(index, 2)
+
+            itemWidget = QWidget()
+            itemLayout = QHBoxLayout(itemWidget)
+            itemLayout.setContentsMargins(0, 0, 0, 0)
+            itemLayout.setSpacing(6)
+
+            dotLabel = QLabel("●")
+            dotLabel.setFixedWidth(14)
+            dotLabel.setStyleSheet(f"color: {htmlColor}; font-size: 12px; background: transparent;")
+
+            textLabel = QLabel(f"<b>{title}</b> — {description}")
+            textLabel.setTextFormat(Qt.RichText)
+            textLabel.setWordWrap(True)
+            textLabel.setToolTip(description)
+            textLabel.setStyleSheet("color: #cbd5e1; font-size: 10px; background: transparent;")
+
+            itemLayout.addWidget(dotLabel, 0, Qt.AlignTop)
+            itemLayout.addWidget(textLabel, 1)
+            legendGrid.addWidget(itemWidget, row, column)
+
+        self.layout.addWidget(legendBox)
 
         self.loading_hint = QLabel("Scraping the network, hold on this might take from 2 to 3 minutes...")
         self.loading_hint.setAlignment(Qt.AlignCenter)
