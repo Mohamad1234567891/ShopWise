@@ -32,6 +32,12 @@ class AsyncSlotsManager:
             except asyncio.CancelledError:
                 if future.done() and not future.cancelled():
                     self.Release()  # the slot was handed over just as this task was cancelled, here we skip it
+                else:
+                    # Still waiting in the queue: mark the future as cancelled
+                    # so Release() skips it. Without this, Release() hands the
+                    # slot to a dead task and that slot is leaked forever,
+                    # which eventually deadlocks the whole app.
+                    future.cancel()
                 raise
         try:
             yield # start doing the task

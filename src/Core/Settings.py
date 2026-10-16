@@ -13,6 +13,7 @@ HTTP_PER_STORE = (
 BROWSER_TABS = 4  # browser tabs running at the same time
 REQUEST_TIMEOUT = 20  # seconds per download
 PRODUCT_TIME_LIMIT = 20  # seconds for one product's reviews
+SCRAPE_TIME_LIMIT = 240  # seconds allowed for the whole scraping session before showing the results collected so far
 VERBOSE = False  # print every product as JSON while running
 CLUSTER_GAP_FACTOR = 1.5  # a jump larger than 50% starts a new price cluster
 KEEP_MIN_FACTOR = 0.45  # clusters closer than this (x the main cluster median) stay in the results

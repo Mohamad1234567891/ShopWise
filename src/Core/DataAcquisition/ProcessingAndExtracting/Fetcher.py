@@ -17,6 +17,26 @@ from src.Helpers import HTTPHelper as HH
 from src.Core.DataAcquisition.AsyncSlotsManager import AsyncSlotsManager
 from src.Core import Settings
 
+# Playwright's shutdown and launch can occasionally stall. Every close/launch
+# below is bounded by these timeouts, so a stalled browser can never keep the
+# app "loading" forever.
+CLOSE_TIMEOUT = 10          # seconds allowed for closing the browser / HTTP session
+BROWSER_START_TIMEOUT = 60  # seconds allowed for launching the browser
+PAGE_CALL_TIMEOUT = 30      # seconds allowed for a single page operation (evaluate/content/new tab...)
+
+
+async def SafeCall(coro, timeout=PAGE_CALL_TIMEOUT):
+    """Awaits a coroutine with a hard timeout and returns None on timeout/error.
+
+    The installed Playwright version sends evaluate/content/new_page/close/
+    cookies WITHOUT any default timeout, so a hung browser tab used to block
+    the whole app forever. Every such call goes through here now."""
+    try:
+        return await asyncio.wait_for(coro, timeout=timeout)
+    except Exception:
+        return None
+
+
 class Fetcher:
     """Fetches webpages from a URL using http requests, if an http request fails it launches a headless browser to try and fetch the webpage from, but it always tries http requests
        first as it is much faster.
@@ -42,16 +62,24 @@ class Fetcher:
         return self
 
     async def __aexit__(self, *exc):
+        # Every close gets a hard timeout: a stalled shutdown must never
+        # block the results from being shown.
         for closer in (self.context, self.browser):
             try:
                 if closer:
-                    await closer.close()
+                    await asyncio.wait_for(closer.close(), timeout=CLOSE_TIMEOUT)
             except Exception:
                 pass
         if self.playwright:
-            await self.playwright.stop()
+            try:
+                await asyncio.wait_for(self.playwright.stop(), timeout=CLOSE_TIMEOUT)
+            except Exception:
+                pass
         if self.httpRequestor:
-            await self.httpRequestor.close()
+            try:
+                await asyncio.wait_for(self.httpRequestor.close(), timeout=CLOSE_TIMEOUT)
+            except Exception:
+                pass
 
     def InitiateSlotManagerForStore(self, url):
         """Creates an AsyncSlotsManager Object for each url(store), if an object already exists for that url it will just return it"""
@@ -183,7 +211,8 @@ class Fetcher:
                     print("[*] Starting the browser")
                 from playwright.async_api import async_playwright
 
-                self.playwright = await async_playwright().start()
+                self.playwright = await asyncio.wait_for(async_playwright().start(),
+                                                         timeout=BROWSER_START_TIMEOUT)
 
                 """Setting the flags for the browser so that it acts like a normal browser to baypass anti-bots
 
@@ -196,10 +225,13 @@ class Fetcher:
                 args = ["--disable-blink-features=AutomationControlled", "--no-sandbox", "--disable-dev-shm-usage"]
 
                 try:  # full Chromium in "new headless" mode looks like a normal browser to websites
-                    self.browser = await self.playwright.chromium.launch(headless=True, channel="chromium", args=args)
+                    self.browser = await asyncio.wait_for(
+                        self.playwright.chromium.launch(headless=True, channel="chromium", args=args),
+                        timeout=BROWSER_START_TIMEOUT)
                 except Exception:
-                    self.browser = await self.playwright.chromium.launch(headless=True,
-                                                                         args=args)  # if there is no chromium on the system, we run the bundled version with playwright
+                    self.browser = await asyncio.wait_for(
+                        self.playwright.chromium.launch(headless=True, args=args),
+                        timeout=BROWSER_START_TIMEOUT)  # if there is no chromium on the system, we run the bundled version with playwright
 
                 major = self.browser.version.split(".")[0]  # extracting the major version of the browser
 
@@ -208,17 +240,20 @@ class Fetcher:
                 systemInfo = (f"Mozilla/5.0 ({system.get(sys.platform, 'X11; Linux x86_64')}) AppleWebKit/537.36 "
                               f"(KHTML, like Gecko) Chrome/{major}.0.0.0 Safari/537.36")
 
-                self.context = await self.browser.new_context(user_agent=systemInfo, locale="en-US",
-                                                              viewport={"width": 1366, "height": 900})
+                self.context = await SafeCall(self.browser.new_context(user_agent=systemInfo, locale="en-US",
+                                                                       viewport={"width": 1366, "height": 900}),
+                                              BROWSER_START_TIMEOUT)
+                if self.context is None:
+                    raise RuntimeError("creating the browser context timed out")
 
                 """Injecting a javascript lambda function to the webpage before it loads, that overwrites the navigator.webdriver and make it return undefined instead of true.
                    The navigator.webdriver detects automation software and returns true when it detects that."""
-                await self.context.add_init_script(
-                    "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
+                await SafeCall(self.context.add_init_script(
+                    "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"), 10)
 
                 # Intercepting heavy media(videos, fonts, etc.), and tracker software(Google Analytics, Facebook pixels, etc.), so that the page is loaded faster
-                await self.context.route(RE.HEAVY_RE, lambda route: route.abort())
-                await self.context.route(RE.TRACKER_RE, lambda route: route.abort())
+                await SafeCall(self.context.route(RE.HEAVY_RE, lambda route: route.abort()), 10)
+                await SafeCall(self.context.route(RE.TRACKER_RE, lambda route: route.abort()), 10)
                 return True
 
             except Exception as e:
@@ -245,7 +280,10 @@ class Fetcher:
 
         async with self.tabs.UseSlot(priority):
             try:
-                page = await self.context.new_page()
+                page = await SafeCall(self.context.new_page(), PAGE_CALL_TIMEOUT)
+                if page is None:
+                    return {"html": "", "url": url, "status": 0, "via": "browser", "json": [], "blocked": False,
+                            "error": "opening a browser tab timed out"}
             except Exception as e:  # the browser crashed or was closed
                 return {"html": "", "url": url, "status": 0, "via": "browser", "json": [], "blocked": False,
                         "error": str(e)}
@@ -299,7 +337,7 @@ class Fetcher:
                 if not HH.LooksBlocked(status, html) and self.httpRequestor is not None:
 
                     # we extract all cookies generated by the browser to share with the http request, so that future requests is done with http requests as it is faster
-                    for cookie in await self.context.cookies():
+                    for cookie in (await SafeCall(self.context.cookies(), 10) or []):
                         self.httpRequestor.cookies.set(cookie["name"], cookie["value"], domain=cookie.get("domain", ""),
                                                        path=cookie.get("path", "/"))
 
@@ -311,7 +349,7 @@ class Fetcher:
                         "error": str(e)}
 
             finally:
-                await page.close()
+                await SafeCall(page.close(), 10)
 
     @staticmethod
     async def WaitUntilPageLoads(page, inflight, maxSeconds, quietSeconds=0.5):
@@ -329,9 +367,8 @@ class Fetcher:
 
         end, last, quietSince, idleSince = time.perf_counter() + maxSeconds, -1, None, None
         while True:
-            try:
-                count = await page.evaluate(JS.COUNT_JS)
-            except Exception:  # the page is navigating and changing (it is still loading)
+            count = await SafeCall(page.evaluate(JS.COUNT_JS), PAGE_CALL_TIMEOUT)
+            if count is None:  # the page is navigating and changing (it is still loading)
                 return
 
             now = time.perf_counter()
@@ -367,33 +404,36 @@ class Fetcher:
         try:
             # Some websites do not load everything at once, it loads only parts of the page, once you scroll it loads more, to we try to scroll through the page to load everything
             if scroll:
-                await page.evaluate(JS.SCROLL_JS)
+                await SafeCall(page.evaluate(JS.SCROLL_JS), PAGE_CALL_TIMEOUT)
                 await self.WaitUntilPageLoads(page, inflight, 3.0, 0.4)  # wait until everything loads(after scrolling)
 
             # Usually Reviews are not loaded with the page, they would load when a user click on a 'see reviews' button or a similar button, here we try to load the reviews
             if openReviews and Settings.GET_REVIEWS:
-                clicked = await page.evaluate(JS.CLICK_REVIEW_TAB_JS, JS.REVIEW_WORDS_JS)
+                clicked = await SafeCall(page.evaluate(JS.CLICK_REVIEW_TAB_JS, JS.REVIEW_WORDS_JS), PAGE_CALL_TIMEOUT)
 
                 if clicked:
                     await self.WaitUntilPageLoads(page, inflight, 4.0, 0.7)
 
                 # Trying to find a more reviews button to click
                 for _ in range(Settings.MAX_REVIEW_PAGES or 30):
-                    beforeClicking = await page.evaluate(JS.CLICK_MORE_REVIEWS_JS, JS.REVIEW_WORDS_JS)
+                    beforeClicking = await SafeCall(page.evaluate(JS.CLICK_MORE_REVIEWS_JS, JS.REVIEW_WORDS_JS),
+                                                    PAGE_CALL_TIMEOUT)
 
-                    if beforeClicking < 0:  # if beforeClicking < 0 then there is no buttons to click
+                    if beforeClicking is None or beforeClicking < 0:  # no button to click, or the tab stopped responding
                         break
 
                     clicked = True
                     await self.WaitUntilPageLoads(page, inflight, 4.0, 0.6)
 
                     # if the page elements state was less than or equal to the beforeClicking variable then that means that the button we clicked did nothing
-                    if await page.evaluate(JS.COUNT_JS) <= beforeClicking:
+                    currentCount = await SafeCall(page.evaluate(JS.COUNT_JS), PAGE_CALL_TIMEOUT)
+                    if currentCount is None or currentCount <= beforeClicking:
                         break
 
                 if clicked:
                     # if the button is successffully clicked, we scroll to the button of the page to make sure that everything is loaded.
-                    await page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+                    await SafeCall(page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)"),
+                                   PAGE_CALL_TIMEOUT)
                     await self.WaitUntilPageLoads(page, inflight, 2.0, 0.4)
 
         except Exception:
@@ -408,13 +448,10 @@ class Fetcher:
 
         # if getting the page content fails we wait a little bit(5 seconds) for the page to load and then retry, if it fails three times we return an empty string
         for _ in range(3):
-            try:
-                return await page.content()
+            html = await SafeCall(page.content(), PAGE_CALL_TIMEOUT)
+            if html is not None:
+                return html
 
-            except Exception:
-                try:
-                    await page.wait_for_load_state("domcontentloaded", timeout=5000)
+            await SafeCall(page.wait_for_load_state("domcontentloaded"), 10)
 
-                except Exception:
-                    pass
         return ""

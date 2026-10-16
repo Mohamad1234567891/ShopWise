@@ -141,10 +141,25 @@ async def StartScraping(query):
 
     try:
         async with Fetcher() as fetcher:
-            try:
-                await asyncio.gather(*(ScrapeStore(fetcher, store["url"], store, progress) for store in stores))
-            finally:
-                stats = fetcher.stats
+            # The watchdog: the whole scraping session must finish within
+            # SCRAPE_TIME_LIMIT. If anything gets stuck (a store, a browser
+            # call, a network request...), we stop waiting, print the stacks
+            # of the stuck tasks for diagnosis, and continue with the results
+            # collected so far - the app can never "load forever" again.
+            gatherTask = asyncio.ensure_future(
+                asyncio.gather(*(ScrapeStore(fetcher, store["url"], store, progress) for store in stores)))
+            doneTasks, pendingTasks = await asyncio.wait({gatherTask}, timeout=Settings.SCRAPE_TIME_LIMIT)
+
+            if pendingTasks:
+                gatherTask.cancel()
+                print(f"[!] Scraping exceeded {Settings.SCRAPE_TIME_LIMIT}s - showing the results collected so far.")
+                print("[!] Diagnostic - tasks that were still running when the time limit hit:")
+                for task in asyncio.all_tasks():
+                    if task is not asyncio.current_task() and not task.done():
+                        print("  ---")
+                        task.print_stack()
+
+            stats = fetcher.stats
     except (asyncio.CancelledError, KeyboardInterrupt):
         print("[!] Stopped by user (results collected so far were saved).")
     finally:
