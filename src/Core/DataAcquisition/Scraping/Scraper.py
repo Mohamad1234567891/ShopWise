@@ -130,7 +130,7 @@ async def StartScraping(query):
     urls = FindRegion.GetRegionalStoreUrls(query)
 
     TO.StartHelpers()
-    stores = [{"url": u, "domain": UO.GetDomainFromURL(u), "results": [], "reviewApi": PE.ProductReviewExtractor()} for u in urls]
+    stores = [{"url": u, "domain": UO.GetDomainFromURL(u), "results": [], "reviewApi": PE.ProductReviewExtractor(), "query": query} for u in urls]
     progress = {"done": 0, "total": 0}
     stats = {"http": 0, "browser": 0}
     products = []

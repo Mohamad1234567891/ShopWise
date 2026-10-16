@@ -1,18 +1,18 @@
 # ================================================================ SETTINGS
-MAX_PRODUCTS = None  # None = every product found on the listing page
+MAX_PRODUCTS = 30  # products per store (None = every product found on the listing page)
 MAX_SEARCH_RESULTS = 7  # Maximum Results From querying DuckDuckGo
 GET_REVIEWS = (
     True  # False = skip reviews entirely (fastest: product data only)
 )
 MAX_REVIEW_PAGES = (
-    5  # review pages read per product (None = all of them; slower on big products)
+    3  # review pages read per product (None = all of them; slower on big products)
 )
 HTTP_PER_STORE = (
     6  # downloads at the same time on one store (6 = what Chrome does)
 )
 BROWSER_TABS = 4  # browser tabs running at the same time
 REQUEST_TIMEOUT = 20  # seconds per download
-PRODUCT_TIME_LIMIT = 60  # seconds for one product's reviews
+PRODUCT_TIME_LIMIT = 20  # seconds for one product's reviews
 VERBOSE = False  # print every product as JSON while running
 CLUSTER_GAP_FACTOR = 1.5  # a jump larger than 50% starts a new price cluster
 KEEP_MIN_FACTOR = 0.45  # clusters closer than this (x the main cluster median) stay in the results

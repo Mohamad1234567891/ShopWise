@@ -76,13 +76,20 @@ def PriceClusters(prices):
 
 
 def DominantPriceCluster(parsedData):
-  """Returns the main cluster (list of prices) when one clearly dominates.
+  """Returns the price list of the product family the user searched for.
 
-  'Clearly dominates' means it is big enough to trust (at least 3 members and
-  at least 40% of the items) and it is the cluster of the best name-match, so
-  a flood of accessory results can never hijack the real product. Returns None
-  when prices look uniform or ambiguous - callers then fall back to the old
-  global-quartile behavior."""
+  Among the clusters that contain the best name-match (the "relevance" key
+  set by RelevanceAnalysis.FilterProducts):
+    - clusters clearly cheaper than the priciest best matches are treated as
+      accessories of the product and ignored,
+    - among the remaining (top price band) clusters, the tightest one wins
+      (the same product costs similar money everywhere, while junk is
+      scattered), ties broken by the higher price,
+    - the family is every best-match offer within a wide band around that
+      anchor, so ALL variants of the product (storage sizes, plus/ultra
+      models, different sellers) survive together.
+  Falls back to the largest cluster (when it is big enough to trust) and
+  returns None when prices look uniform or ambiguous."""
 
   prices = [val for _, val in parsedData]
   if len(prices) < 2:
@@ -92,25 +99,46 @@ def DominantPriceCluster(parsedData):
   if len(clusters) < 2:
     return None  # one uniform cluster: nothing to separate
 
-  bySize = max(clusters, key=len)
+  def ClusterTightness(cluster):
+    return min(cluster) / max(cluster) if len(cluster) >= 2 else 0.0
 
-  # Prefer the cluster that contains the best name-match (the "relevance" key
-  # is set by RelevanceAnalysis.FilterProducts) unless that cluster is tiny.
-  main = bySize
   hasRelevance = any("relevance" in item for item, _ in parsedData)
   if hasRelevance:
     bestRel = max((item.get("relevance", 0.6) for item, _ in parsedData), default=0.6)
-    for item, val in parsedData:
-      if item.get("relevance", 0.6) == bestRel:
-        bestCluster = next((c for c in clusters if val in c), None)
-        if bestCluster is not None and (len(bestCluster) >= 3 or len(bestCluster) >= 0.25 * len(bySize)):
-          main = bestCluster
-        break
+    candidates = []
+    for cluster in clusters:
+      clusterValues = set(cluster)
+      if any(item.get("relevance", 0.6) == bestRel for item, val in parsedData if val in clusterValues):
+        candidates.append(cluster)
 
-  if len(main) < 3 or len(main) < 0.4 * len(prices):
-    return None  # not dominant enough to trust
+    if candidates:
+      # accessories of the product are (much) cheaper than the product itself:
+      # the anchor must come from the top price band of the best matches
+      multi = [c for c in candidates if len(c) >= 2]
+      priciest = max(multi, key=lambda c: statistics.median(c)) if multi else \
+                 max(candidates, key=lambda c: statistics.median(c))
+      priciestMedian = statistics.median(priciest)
+      topBand = [c for c in candidates if statistics.median(c) >= 0.3 * priciestMedian]
 
-  return main
+      anchor = max(topBand, key=lambda c: (ClusterTightness(c), statistics.median(c)))
+      anchorMedian = statistics.median(anchor)
+
+      # the family: every best-match offer close to the anchor - this keeps
+      # all variants of the product alive while excluding the cheap
+      # accessories around it
+      family = sorted(val for item, val in parsedData
+                      if item.get("relevance", 0.6) == bestRel
+                      and anchorMedian * 0.3 <= val <= anchorMedian * 3.3)
+      if family:
+        return family
+      return None
+
+  # fallback: no relevance stamps -> the largest cluster, when it is big
+  # enough to trust
+  bySize = max(clusters, key=len)
+  if len(bySize) >= 3 and len(bySize) >= 0.4 * len(prices):
+    return bySize
+  return None
 
 
 def AssignPoints(storeList):

@@ -7,6 +7,7 @@ from urllib.parse import urlparse, urljoin
 
 from src.Core import Settings
 from src.Core.DataAcquisition.ProcessingAndExtracting import ProductPage
+from src.Core.DataAnalysis import RelevanceAnalysis as RA
 
 from src.Constants import Constants
 from src.Constants import StringConstants as SC
@@ -101,8 +102,16 @@ async def ProcessProduct(fetcher, store, index, pdpURL, listingURL, progress):
                 data["reviewLinks"] = data["reviewLinks"] or more["reviewLinks"]
                 page = rendered
 
+        # Products whose name clearly does not match the query will be
+        # filtered out later anyway, so their (expensive) review crawling is
+        # skipped here - this is what keeps flooded searches fast. The check
+        # runs only AFTER the browser fallback above, so the names it reads
+        # are the best ones we have.
+        query = store.get("query", "")
+        relevant = RA.ProductRelevance(query, data["productName"] or data["pageTitle"] or "") if query else 1.0
+
         reviews = data["reviews"] if Settings.GET_REVIEWS else []
-        if Settings.GET_REVIEWS and Settings.MAX_REVIEW_PAGES != 0 and data["ratingAmount"] != 0:
+        if relevant > 0 and Settings.GET_REVIEWS and Settings.MAX_REVIEW_PAGES != 0 and data["ratingAmount"] != 0:
             try:
                 # Impose a strict time limit on review pagination; timeout is caught to preserve partial results
                 await asyncio.wait_for(MoreReviews(fetcher, store, pdpURL, page, data, reviews), Settings.PRODUCT_TIME_LIMIT)
