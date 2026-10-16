@@ -49,7 +49,7 @@ ShopWise automates the entire product-research workflow:
 - ⚡ **Dual fetching engine** — ultra-fast HTTP requests that impersonate Google Chrome (`curl_cffi`), with automatic fallback to a stealth headless browser (Playwright/Chromium) whenever a store's anti-bot protection blocks plain requests.
 - 🧲 **Deep product extraction** — pulls structured data from JSON-LD, microdata, embedded JSON and DOM heuristics, so it works even on stores without consistent markup.
 - 💬 **Review intelligence** — crawls paginated reviews, clicks "show more" buttons in the browser, **learns each store's internal review API** and reuses it for the remaining products, translates reviews to English, and scores their sentiment.
-- 🏆 **Smart ranking** — every product earns a continuous **value score** (`rating quality ÷ price ratio − review penalty`), then gets color-coded: **gold** (best value), **blue** (cheapest), **red** (lowest scores) and white. Colors only show in GUI mode.
+- 🏆 **Smart ranking** — every product earns a continuous **value score** (`rating quality ÷ price ratio − review penalty`), then gets color-coded: **gold** (best value), **blue** (cheapest), **red** (lowest scores) and white.
 - 🖥️ **Interactive CLI** — a rich, colorized results table; type a product's number to open its store page directly in your browser.
 - 🎨 **Modern GUI** — a polished PySide6 desktop interface with a live search bar, product cards, loading states and smooth scrolling, powered by the same scraping engine as the CLI.
 - 🧵 **Concurrency & rate control** — per-store request slots, browser-tab limits, priority-based task scheduling and per-request/per-product timeouts keep scraping fast while staying polite to the stores.
@@ -448,7 +448,7 @@ Every product that survives the relevance and price-cluster filters earns a cont
 
 The final score is `value = rating quality ÷ price ratio − review penalty`, and the results are sorted from the highest value to the lowest.
 
-The colors: 🥇 **gold** = best value, 🔵 **blue** = cheapest offer, 🔴 **red** = the five lowest scores, ⚪ white = everything in between. **Note that these colors only appears in the GUI.**
+The colors: 🥇 **gold** = best value, 🔵 **blue** = cheapest offer, 🔴 **red** = the five lowest scores, ⚪ white = everything in between.
 
 ---
 
