@@ -51,6 +51,8 @@ async def main():
                   f"({stats['http']} fast requests, {stats['browser']} browser pages).")
 
 
+
+
 if __name__ == "__main__":
     multiprocessing.freeze_support()  # needed only if this script is packaged as an .exe
     try:

@@ -53,7 +53,7 @@ class Window(QMainWindow):
         self.layout.addLayout(search_row)
         self.search_bar.search_submitted.connect(self.on_search)
 
-        self.loading_hint = QLabel("This might take a few minutes...")
+        self.loading_hint = QLabel("Scraping the network, hold on this might take from 2 to 3 minutes...")
         self.loading_hint.setAlignment(Qt.AlignCenter)
         self.loading_hint.setStyleSheet("""
             QLabel {
@@ -90,7 +90,7 @@ class Window(QMainWindow):
 
     def on_results(self, products, stats):
         for product in products:
-            card = ProductCard(product["storeName"], product["productName"], product["imageURL"], product["price"], product["rating"], "view Offer", product["productURL"], product["color"])
+            card = ProductCard(product["storeName"], product["productName"], product["imageURL"], product["price"], product["rating"], product["ratingAmount"], "view Offer", product["productURL"], product["color"])
             self.scroll_container.add_item(card)
 
 
@@ -102,24 +102,10 @@ class Window(QMainWindow):
         self.loading_hint.hide()
 
 
-win = None
-
-def CreateCard(storeName, productName, imageURL, price, rating, buttonURL, buttonText="View Offer", color="white"):
-    global win
-
-    if win:
-        card = ProductCard(storeName, productName, imageURL, price, rating, buttonText, buttonURL, color)
-        win.scroll_container.add_item(card)
-    else:
-        print("[-] No Window Instance")
-
-
-
-
 def StartGUI():
-    global win
+    """Starts the graphical user interface"""
 
     app = QApplication(sys.argv)
-    win = Window()
-    win.show()
+    window = Window()
+    window.show()
     sys.exit(app.exec())

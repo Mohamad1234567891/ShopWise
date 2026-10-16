@@ -30,6 +30,7 @@ class ProductCard(QFrame):
         image_url: str,
         price: str,
         rating: float,
+        ratingAmount: str = "N/A",
         button_text: str = "View Offer",
         button_url: str = "",
         color: str = "white",
@@ -150,6 +151,18 @@ class ProductCard(QFrame):
             }}
         """)
         self.main_layout.addWidget(self.title_label)
+
+        # Rating Count (right under the product name)
+        self.rating_count_label = QLabel(ProductCard.FormatRatingCount(ratingAmount))
+        self.rating_count_label.setStyleSheet(f"""
+            QLabel {{
+                color: {self.store_color};
+                font-size: 10px;
+                font-weight: 600;
+                background: transparent;
+            }}
+        """)
+        self.main_layout.addWidget(self.rating_count_label)
 
         # Warnings / Badges Layout (Stacked Vertically)
         self.tags_layout = QVBoxLayout()
@@ -286,6 +299,19 @@ class ProductCard(QFrame):
             reply.abort()
 
     # --- Badge Helper ---
+    @staticmethod
+    def FormatRatingCount(value):
+        """'1234' -> '1,234 ratings', 'N/A' -> 'No ratings'."""
+        text = str(value if value not in (None, "") else "")
+        count = 0
+        try:
+            count = int(float(text.replace(".", "").replace(",", "")))
+        except ValueError:
+            count = 0
+        if count > 0:
+            return f"{count:,} ratings"
+        return "No ratings"
+
     def _add_tag(self, text: str, bg_color: str, text_color: str, tooltip: str = ""):
         tag = QLabel(text)
         if tooltip:

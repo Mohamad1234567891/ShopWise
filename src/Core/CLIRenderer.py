@@ -37,6 +37,22 @@ def _format_price(value) -> str:
     return str(value) if value not in (None, "") else "-"
 
 
+def FormatCount(value) -> str:
+    if isinstance(value, bool):
+        return "-"
+    if isinstance(value, (int, float)):
+        return f"{int(value):,}"
+    return str(value) if value not in (None, "", "N/A") else "-"
+
+
+# The color of each row in the terminal table (same meaning as the GUI cards).
+ROW_COLORS = {
+    "gold": "gold1",
+    "blue": "blue",
+    "red": "red",
+}
+
+
 def DisplayOnCli(products: list[dict]) -> None:
     console = _make_console()
 
@@ -53,6 +69,7 @@ def DisplayOnCli(products: list[dict]) -> None:
     table.add_column("#", justify="right", style="dim", no_wrap=True)
     table.add_column("Product Name", overflow="fold")
     table.add_column("Rating", justify="center", no_wrap=True)
+    table.add_column("Rating Count", justify="right", no_wrap=True)
     table.add_column("Store Name", overflow="fold")
     table.add_column("Price", justify="right", no_wrap=True)
 
@@ -69,8 +86,10 @@ def DisplayOnCli(products: list[dict]) -> None:
             str(index),
             str(product.get("productName", "-")),
             str(rating) if rating not in (None, "") else "-",
+            FormatCount(product.get("ratingAmount")),
             str(product.get("storeName", "-")),
             _format_price(product.get("price")),
+            style=ROW_COLORS.get(str(product.get("color", "")).lower()),
         )
 
     console.print(table)

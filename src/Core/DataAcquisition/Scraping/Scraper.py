@@ -122,6 +122,8 @@ def GetResultsOfStores(stores):
 
 async def StartScraping(query):
     """Scrapes all regional stores for the query. Returns (products, stats)."""
+
+
     if not query or query.strip() == "":
         print("[-] Please Enter the product you wish to buy")
         return
@@ -135,7 +137,7 @@ async def StartScraping(query):
     stats = {"http": 0, "browser": 0}
     products = []
 
-    print("[*] Scraping the network, hold on this might take a few minutes...")
+    print("[*] Scraping the network, hold on this might take from 2 to 3 minutes...")
 
     try:
         async with Fetcher() as fetcher:

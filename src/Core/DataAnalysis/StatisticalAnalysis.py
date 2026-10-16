@@ -239,33 +239,20 @@ def SortAndColorStores(storeList):
 
   items = list(storeList)
 
-  # 1. Find the item with the most points (Gold / Index 0)
+  # 1. Find the item with the most points (Gold) and the cheapest (Blue) -
+  #    every product is then ordered strictly by its points, so the cheapest
+  #    keeps the position its points earned instead of always being second.
   goldItem = max(items, key=GetPoints)
+  cheapestItem = min(items, key=GetPriceVal)
 
-  # 2. Find the cheapest item (Blue / Index 1)
-  remainingForCheapest = [it for it in items if it is not goldItem]
-  cheapestItem = (
-      min(remainingForCheapest, key=GetPriceVal)
-      if remainingForCheapest
-      else None
-  )
-
-  # 3. Identify the 5 items with the least points (Red), tracked by id()
+  # 2. Identify the 5 items with the least points (Red), tracked by id()
   sortedByPointsAsc = sorted(items, key=GetPoints)
   redIds = {id(it) for it in sortedByPointsAsc[:5]}
 
-  # 4. Build the ordered list
-  middleItems = [
-      it for it in items if it is not goldItem and it is not cheapestItem
-  ]
-  middleItems.sort(key=GetPoints, reverse=True)
+  # 3. Order everything strictly by points, best to worst
+  orderedList = sorted(items, key=GetPoints, reverse=True)
 
-  orderedList = [goldItem]
-  if cheapestItem is not None:
-    orderedList.append(cheapestItem)
-  orderedList.extend(middleItems)
-
-  # 5. Assign colors (Gold > Blue > Red > White)
+  # 4. Assign colors (Gold > Blue > Red > White)
   for item in orderedList:
     if item is goldItem:
       item["color"] = "gold"
