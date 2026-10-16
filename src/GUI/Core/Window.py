@@ -2,7 +2,7 @@ import sys
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel
 )
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt
 
 from src.GUI.Components.Scroll import ScrollContainer
 from src.GUI.Components.SearchBar import SearchBar
@@ -10,9 +10,7 @@ from src.GUI.Components.Card import ProductCard
 from src.GUI.Components.loading import SmallLoader
 
 from src.GUI.Core import GUISrapeWorker as GSW
-
-from src.Core.DataAnalysis import StatisticalAnalysis as SA
-
+from src.GUI.Components.EmojiIcon import EmojiIcon
 
 class Window(QMainWindow):
     def __init__(self):
@@ -20,6 +18,7 @@ class Window(QMainWindow):
         self.worker = None
 
         self.setWindowTitle("ShopWise")
+        self.setWindowIcon(EmojiIcon("🛒"))
         self.resize(850, 650)
         self.setMinimumSize(345, 560)
 
@@ -106,6 +105,7 @@ def StartGUI():
     """Starts the graphical user interface"""
 
     app = QApplication(sys.argv)
+    app.setWindowIcon(EmojiIcon("🛒"))
     window = Window()
     window.show()
     sys.exit(app.exec())
