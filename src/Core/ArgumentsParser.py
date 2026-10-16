@@ -31,6 +31,8 @@ def parseArguments(argv: list[str] | None = None) -> argparse.Namespace:
     Mandatory: product name. Everything else is optional and defaults to the
     values in Settings.py (or False for flags).
     """
+
+
     parser = argparse.ArgumentParser(
         prog="python -m src.CLI",
         description="ShopWise - search a product across stores and compare results.",

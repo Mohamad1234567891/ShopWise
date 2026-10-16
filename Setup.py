@@ -344,5 +344,5 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n[!!] Setup interrupted by the user.", flush=True)
+        print("\n[!] Setup interrupted by the user.", flush=True)
         sys.exit(130)

@@ -23,29 +23,32 @@ async def main():
         Window.StartGUI()
         return
 
+    newSearch = True # after doing our first run if this remained true then the user have searched for a new product
+    firstRun = True # this will decide from where the query is taken(from the arguments or from the new input) if first run then from arguments.
+    while newSearch:
+        startTime = time.perf_counter()
+        if Settings.VERBOSE:
+            print("[*] Initializing session")
 
-    startTime = time.perf_counter()
-    if Settings.VERBOSE:
-        print("[*] Initializing session")
+        if AM.GetAsyncSession() is None:
+            print("[!] curl_cffi is not installed -> every page goes through the browser (slower). pip install curl_cffi")
 
-    if AM.GetAsyncSession() is None:
-        print("[!] curl_cffi is not installed -> every page goes through the browser (slower). pip install curl_cffi")
+        products, stats = await Scraper.StartScraping(args.productName if firstRun else input("Enter a product name: "))
+        firstRun = False
 
-    products, stats = await Scraper.StartScraping(args.productName)
+        givenPointsProducts = SA.SortAndColorStores(SA.AssignPoints(products))
 
-    givenPointsProducts = SA.SortAndColorStores(SA.AssignPoints(products))
+        if not givenPointsProducts:
+            print("[!] No products with a valid price were found.")
+            return
 
-    if not givenPointsProducts:
-        print("[!] No products with a valid price were found.")
-        return
+        print("Our top products are listed first, with the best options usually found in the top five. We recommend checking prices and reviews, as the fifth item can sometimes outmatch the first. However, the top five will almost always give you the best value.")
 
-    print("Our top products are listed first, with the best options usually found in the top five. We recommend checking prices and reviews, as the fifth item can sometimes outmatch the first. However, the top five will almost always give you the best value.")
+        newSearch = CLIRenderer.DisplayOnCli(givenPointsProducts)
 
-    CLIRenderer.DisplayStoreCli(givenPointsProducts)
-
-    if Settings.VERBOSE:
-        print(f"\n[*] Crawling session complete: {len(givenPointsProducts)} products in {time.perf_counter() - startTime:.1f}s "
-              f"({stats['http']} fast requests, {stats['browser']} browser pages).")
+        if Settings.VERBOSE:
+            print(f"\n[*] Crawling session complete: {len(givenPointsProducts)} products in {time.perf_counter() - startTime:.1f}s "
+                  f"({stats['http']} fast requests, {stats['browser']} browser pages).")
 
 
 if __name__ == "__main__":

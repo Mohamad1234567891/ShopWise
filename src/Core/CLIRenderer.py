@@ -37,7 +37,7 @@ def _format_price(value) -> str:
     return str(value) if value not in (None, "") else "-"
 
 
-def DisplayStoreCli(products: list[dict]) -> None:
+def DisplayOnCli(products: list[dict]) -> None:
     console = _make_console()
 
     if not products:
@@ -80,16 +80,19 @@ def DisplayStoreCli(products: list[dict]) -> None:
 
     while True:
         choice = Prompt.ask(
-            "\nEnter a product number to open its store page (Enter to finish)",
+            "\nEnter a product number to open its store page (q to finish, s for a new search)",
             default="",
             show_default=False,
             console=console,
         ).strip()
 
-        if not choice:
-            break
+        if choice.lower() == "q":
+            return False
+        elif choice.lower() == "s":
+            return True
+
         if not choice.isdigit() or int(choice) not in range(1, len(products) + 1):
-            console.print("[red]Invalid number.[/red]")
+            console.print("[red]Invalid input.[/red]")
             continue
 
         number = int(choice)
