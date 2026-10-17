@@ -129,10 +129,10 @@ async def StartScraping(query):
         return
 
 
-    urls = FindRegion.GetRegionalStoreUrls(query)
+    urls, effectiveQuery = FindRegion.GetRegionalStoreUrls(query)
 
     TO.StartHelpers()
-    stores = [{"url": u, "domain": UO.GetDomainFromURL(u), "results": [], "reviewApi": PE.ProductReviewExtractor(), "query": query} for u in urls]
+    stores = [{"url": u, "domain": UO.GetDomainFromURL(u), "results": [], "reviewApi": PE.ProductReviewExtractor(), "query": effectiveQuery} for u in urls]
     progress = {"done": 0, "total": 0}
     stats = {"http": 0, "browser": 0}
     products = []
@@ -169,7 +169,9 @@ async def StartScraping(query):
     # Drop products that clearly do not match the searched query (other
     # models, unrelated listings). Accessories are still kept when the user
     # actually searches for one - they only lose against the real product
-    # later, in the price-cluster logic of StatisticalAnalysis.
-    products = RA.FilterProducts(products, query)
+    # later, in the price-cluster logic of StatisticalAnalysis. Both the
+    # original and the translated query are used, so local product names
+    # match even when the user typed the query in another language.
+    products = RA.FilterProducts(products, query, (effectiveQuery,))
 
     return products, stats

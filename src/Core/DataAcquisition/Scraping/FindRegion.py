@@ -5,6 +5,7 @@ from urllib.parse import quote
 from src.Constants import Constants as C
 
 from src.Core import Settings
+from src.Core.DataAnalysis import RelevanceAnalysis as RA
 
 
 def AutoDetectCountry():
@@ -18,6 +19,65 @@ def AutoDetectCountry():
     except Exception:
         pass
     return "TR"  # Fallback
+
+
+# Caches for the translation step, so the models are loaded only once.
+InstalledLanguages = None
+Translators = {}
+
+
+def PreservesTokens(original, translated):
+    """True when the translation kept every token of the original query.
+
+    Argos can mangle brand/model words ('matepad' -> 'eşipad'), and searching
+    stores with such a query would give WORSE results. A translation is only
+    trusted when every original token survives it."""
+    originalRuns = RA.NormalizeRuns(original)
+    translatedRuns = RA.NormalizeRuns(translated)
+    return all(run in translatedRuns for run in originalRuns)
+
+
+def TranslateQuery(searchQuery, regionCode):
+    """Translates the query into the region's local language (best effort).
+
+    Local stores name their products in their own language (Turkish "kılıf"
+    for "cover"), so an English query often matches nothing. When the Argos
+    model for the region is installed AND the translation keeps every token
+    of the original query intact, the translated query is used. Returns the
+    original query unchanged otherwise."""
+    global InstalledLanguages, Translators
+
+    targetLang = C.REGION_LANGUAGES.get(regionCode)
+    if not targetLang or targetLang == "en":
+        return searchQuery
+
+    try:
+        import argostranslate.translate as ArgosTranslate
+
+        if InstalledLanguages is None:
+            InstalledLanguages = {lang.code: lang for lang in ArgosTranslate.get_installed_languages()}
+        if "en" not in InstalledLanguages or targetLang not in InstalledLanguages:
+            return searchQuery
+
+        # never translate a query that is already in the region's language
+        try:
+            from langdetect import detect
+            if detect(searchQuery) == targetLang:
+                return searchQuery
+        except Exception:
+            pass
+
+        key = (targetLang,)
+        if key not in Translators:
+            Translators[key] = InstalledLanguages["en"].get_translation(InstalledLanguages[targetLang])
+
+        translated = Translators[key].translate(searchQuery)
+        if translated and translated.strip() and PreservesTokens(searchQuery, translated):
+            return translated.strip()
+    except Exception:
+        pass
+
+    return searchQuery
 
 
 def DirectStoreUrl(storeDomain, searchQuery):
@@ -34,18 +94,29 @@ def DirectStoreUrl(storeDomain, searchQuery):
 def GetRegionalStoreUrls(searchQuery):
     """Detects the user's region and returns a search URL for every store in
     that region, built directly from the templates in Constants - no search
-    engine is involved, so all stores are resolved instantly."""
+    engine is involved, so all stores are resolved instantly.
+
+    The query is first translated into the region's language (when possible),
+    because local stores respond far better to local queries. Returns
+    (urls, effectiveQuery), where effectiveQuery is the query actually used -
+    it is also the one the relevance filter should compare product names
+    against."""
     regionCode = AutoDetectCountry()
 
     if Settings.VERBOSE:
         print(f"[*] Auto-detected Region: {regionCode}")
 
+    effectiveQuery = TranslateQuery(searchQuery, regionCode)
+
+    if Settings.VERBOSE and effectiveQuery != searchQuery:
+        print(f"[*] Translated the query to the region's language: {effectiveQuery}")
+
     storeList = C.STORES_BY_REGION.get(regionCode, C.STORES_BY_REGION["TR"])
 
     urls = []
     for storeDomain in storeList:
-        storeUrl = DirectStoreUrl(storeDomain, searchQuery)
+        storeUrl = DirectStoreUrl(storeDomain, effectiveQuery)
         if storeUrl:
             urls.append(storeUrl)
 
-    return urls
+    return urls, effectiveQuery

@@ -117,21 +117,27 @@ def ProductRelevance(query, productName):
     return matched / len(queryRuns)
 
 
-def FilterProducts(products, query):
+def FilterProducts(products, query, alternateQueries=()):
     """Removes only the products that clearly do not match the query.
 
     Conservative on purpose: hard mismatches (score 0) and names clearly
     below the best match in the batch are dropped; everything else is left
     for the price-cluster logic to judge. When the user searches for an
     accessory, the accessory is the best match and stays.
-    """
+
+    alternateQueries: extra forms of the same query (e.g. a translation into
+    the region's language). A product's relevance is the best score against
+    ANY of the forms, so local names match even when the original query is
+    in a different language."""
     if not products or not query or not query.strip():
         return products
+
+    queries = [query] + [alt for alt in alternateQueries if alt and alt != query]
 
     scored = []
     for item in products:
         name = item.get("productName") or item.get("pageTitle") or ""
-        relevance = ProductRelevance(query, name)
+        relevance = max((ProductRelevance(singleQuery, name) for singleQuery in queries), default=0.0)
         item["relevance"] = relevance
         scored.append((relevance, item))
 

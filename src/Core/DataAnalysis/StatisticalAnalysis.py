@@ -3,6 +3,7 @@ import statistics
 import re
 
 from src.Core import Settings
+from src.Core.DataAnalysis import RelevanceAnalysis as RA
 from src.Core.DataAnalysis import SentimentAnalysis as SA
 from src.Core.DataAnalysis import Translator as T
 
@@ -75,6 +76,43 @@ def PriceClusters(prices):
   return clusters
 
 
+def KeepDominantSubgroup(familyItems):
+  """Keeps only the family items that share the family's dominant extra word.
+
+  When the query's accessory word matches nothing (English "cover" vs Turkish
+  "kılıf"), the best-matching family can mix several accessory types with
+  similar prices - covers AND screen protectors. The word that appears in
+  more than half of the family's names defines what the user almost
+  certainly meant, so items without it are marked with familyMember = False
+  and later removed by AssignPoints. Works in any language, with no word
+  lists."""
+  names = [" ".join(RA.NormalizeRuns(item.get("productName") or item.get("pageTitle") or ""))
+           for item, _ in familyItems]
+
+  candidates = set()
+  for name in names:
+    for run in name.split():
+      if len(run) >= 2 and not run.isdigit():
+        candidates.add(run)
+
+  if not candidates:
+    return familyItems
+
+  total = len(familyItems)
+  dominantTokens = [token for token in candidates
+                    if sum(1 for name in names if token in name) > total / 2]
+  if not dominantTokens:
+    return familyItems
+
+  kept = []
+  for index, (item, val) in enumerate(familyItems):
+    if all(token in names[index] for token in dominantTokens):
+      kept.append((item, val))
+    else:
+      item["familyMember"] = False  # removed later by AssignPoints
+  return kept
+
+
 def DominantPriceCluster(parsedData):
   """Returns the price list of the product family the user searched for.
 
@@ -88,6 +126,9 @@ def DominantPriceCluster(parsedData):
     - the family is every best-match offer within a wide band around that
       anchor, so ALL variants of the product (storage sizes, plus/ultra
       models, different sellers) survive together.
+  When the query has words that NO product matched, the user is most likely
+  looking for a related accessory (whose local name differs from the query's
+  word), so the largest family wins instead of the priciest.
   Falls back to the largest cluster (when it is big enough to trust) and
   returns None when prices look uniform or ambiguous."""
 
@@ -120,17 +161,35 @@ def DominantPriceCluster(parsedData):
       priciestMedian = statistics.median(priciest)
       topBand = [c for c in candidates if statistics.median(c) >= 0.3 * priciestMedian]
 
+      # If the query contains words that NO product matched (bestRel < 1),
+      # the user is most likely looking for a RELATED item - an accessory
+      # like "cover", whose local name (Turkish "kılıf") is different from
+      # the query's word. In that case the expensive base product ties with
+      # the accessory on relevance, and the accessory family is usually the
+      # largest one in the results - so the largest family wins instead of
+      # the priciest. Fully matched queries (bestRel == 1) keep the normal
+      # top-price-band behavior.
+      if bestRel < 1.0:
+        topBand = [max(candidates, key=len)]
+
       anchor = max(topBand, key=lambda c: (ClusterTightness(c), statistics.median(c)))
       anchorMedian = statistics.median(anchor)
 
       # the family: every best-match offer close to the anchor - this keeps
       # all variants of the product alive while excluding the cheap
       # accessories around it
-      family = sorted(val for item, val in parsedData
-                      if item.get("relevance", 0.6) == bestRel
-                      and anchorMedian * 0.3 <= val <= anchorMedian * 3.3)
-      if family:
-        return family
+      familyItems = [(item, val) for item, val in parsedData
+                     if item.get("relevance", 0.6) == bestRel
+                     and anchorMedian * 0.3 <= val <= anchorMedian * 3.3]
+
+      # When the query had unmatched words, the family can mix several
+      # accessory types with similar prices (covers AND screen protectors).
+      # The dominant word of the names defines what the user meant.
+      if bestRel < 1.0 and len(familyItems) >= 3:
+        familyItems = KeepDominantSubgroup(familyItems)
+
+      if familyItems:
+        return sorted(val for _, val in familyItems)
       return None
 
   # fallback: no relevance stamps -> the largest cluster, when it is big
@@ -171,6 +230,9 @@ def AssignPoints(storeList):
     mainMedian = statistics.median(mainCluster)
     keepMin, keepMax = mainMedian * Settings.KEEP_MIN_FACTOR, mainMedian * Settings.KEEP_MAX_FACTOR
     parsedData = [(item, val) for item, val in parsedData if keepMin <= val <= keepMax]
+    # remove items that did not share the family's dominant word
+    # (marked by DominantPriceCluster / KeepDominantSubgroup)
+    parsedData = [(item, val) for item, val in parsedData if item.get("familyMember", True)]
     storeList = [item for item, _ in parsedData]
     sortedPrices = sorted(mainCluster)
   else:

@@ -632,6 +632,20 @@ SEARCH_URL_TEMPLATES = {
     "youknow.co.nz": "https://www.youknow.co.nz/search?q={query}",
 }
 
+# The language of each region's local stores (Argos Translate language codes).
+# Used to translate the user's query into the region's own language, so local
+# product names (e.g. Turkish "kılıf" for "cover") match the search.
+REGION_LANGUAGES = {
+    "TR": "tr", "DE": "de", "AT": "de", "CH": "de", "BE": "nl", "NL": "nl",
+    "FR": "fr", "IT": "it", "ES": "es", "AR": "es", "MX": "es", "CO": "es",
+    "CL": "es", "PE": "es", "BR": "pt", "PL": "pl", "RU": "ru", "JP": "ja",
+    "CN": "zh", "KR": "ko", "IL": "he", "EG": "ar", "SA": "ar", "AE": "ar",
+    "VN": "vi", "TH": "th", "ID": "id", "SE": "sv", "NO": "no", "DK": "da",
+    "IN": "hi", "MY": "ms", "PH": "tl", "KE": "sw", "ZA": "af",
+    "US": "en", "CA": "en", "GB": "en", "IE": "en", "AU": "en", "NZ": "en",
+    "SG": "en", "NG": "en",
+}
+
 # Units that mark a number as a variant attribute (capacity, size, power...),
 # NOT as a model number: "256 gb", "45 w", "500 ml". These are unit symbols,
 # not product vocabulary, and they are written in Latin letters on stores
