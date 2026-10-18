@@ -94,3 +94,12 @@ YEAR_RE = re.compile(r"^(?:19|20)\d{2}$")
 # Detects Latin letters/digits inside a run, to tell Latin runs (where exact
 # equality is required) from non-Latin runs (where substring is enough).
 LATIN_CHAR_RE = re.compile(r"[a-z0-9]")
+
+# Image URLs that look like a store logo, icon, banner or placeholder rather
+# than a product image. "/org/" and "a1/\d{1,2}/" catch store-asset paths
+# (e.g. n11 serves its logo and tiny icons from n11scdn.akamaized.net/a1/org/
+# and .../a1/30/ .../a1/70/).
+LOGO_IMAGE_RE = re.compile(
+    r"logo|sprite|icon|badge|placeholder|blank\.|spacer|transparent|loading|loader|"
+    r"flag|payment|avatar|favicon|pixel|skeleton|banner|advert|sponsor|profile|"
+    r"user|header|footer|nav|menu|cart|/org/|a1/\d{1,2}/|\.svg", re.I)

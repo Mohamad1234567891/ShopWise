@@ -85,7 +85,8 @@ async def ProcessProduct(fetcher, store, index, pdpURL, listingURL, progress):
 
         if not page["html"] or page["blocked"] or page["status"] >= 400:
             reason = page.get("error") or ("blocked by the store" if page["blocked"] else f"HTTP {page['status']}")
-            print(f"  -> Error processing product page {pdpURL}: {reason}")
+            if Settings.VERBOSE:
+                print(f"  -> Error processing product page {pdpURL}: {reason}")
             return
         data = await TO.ParallelDispatch(ProductPage.ExtractProductPage, page["html"], page["url"], page["json"])
 
@@ -140,7 +141,10 @@ async def ProcessProduct(fetcher, store, index, pdpURL, listingURL, progress):
                   #f"{len(reviews)} reviews | {productData['productName'][:70]}")
 
     except Exception as e:
-        print(f"  -> Error processing product page {pdpURL}: {type(e).__name__}: {e}")
+        if Settings.VERBOSE:
+            print(f"  -> Error processing product page {pdpURL}: {type(e).__name__}: {e}")
+        else:
+            print("", end="")
 
 
 def ExtractMetaTags(doc):

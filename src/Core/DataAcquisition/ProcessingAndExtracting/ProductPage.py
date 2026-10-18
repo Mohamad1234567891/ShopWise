@@ -1,10 +1,12 @@
 import re
+import json
 import asyncio
 
 from urllib.parse import urlparse, parse_qsl, urlunparse, urlencode, urljoin
 from lxml import etree
 
 from src.Core.DataAcquisition.ProcessingAndExtracting import DataProcessing as DP
+from src.Core.DataAnalysis import RelevanceAnalysis as RA
 
 from src.Constants import StringConstants as SC
 from src.Constants import RegexConstants as RE
@@ -407,11 +409,25 @@ def SchemaReviews(value):
 
 
 
+def FirstProductImage(value, pageURL):
+    """The first non-logo image from a schema image value (string or list).
+
+    n11 and similar stores mix their own logo into the schema image list -
+    skip any entry that looks like a logo/icon and return the first real
+    product image instead."""
+    entries = value if isinstance(value, (list, tuple)) else [value]
+    for entry in entries:
+        url = UO.FirstURL(entry, pageURL)
+        if url and not RE.LOGO_IMAGE_RE.search(url):
+            return url
+    return UO.FirstURL(value, pageURL)
+
+
 def FromSchema(node, pageURL):
     variants = node.get("hasVariant") if isinstance(node.get("hasVariant"), list) else [node.get("hasVariant")]
     variant = next((v for v in variants if isinstance(v, dict)), {})
     data = {"productName": SO.Clean(node.get("name")),
-            "imageURL": UO.FirstURL(node.get("image"), pageURL) or UO.FirstURL(variant.get("image"), pageURL),
+            "imageURL": FirstProductImage(node.get("image"), pageURL) or FirstProductImage(variant.get("image"), pageURL),
             "price": SchemaPrice(node), "rating": None, "ratingAmount": None,
             "reviews": SchemaReviews(node.get("review") or node.get("reviews"))}
     rating = node.get("aggregateRating")
@@ -776,35 +792,145 @@ def InNoise(el):
     return False
 
 
-def BestImage(root, pageURL):
-    """The main product image of a page region (main/zoom image first, thumbnails and logos last)."""
+def CollectImageSources(doc):
+    """Every image URL the page actually displays - img tags, CSS backgrounds
+    and gallery data-* attributes. Used to check whether a schema image is
+    really shown on the page or is stale metadata."""
+    sources = []
+    for img in doc.xpath(".//img"):
+        for attr in ("src", "data-src", "data-lazy-src", "data-original"):
+            value = (img.get(attr) or "").strip()
+            if value:
+                sources.append(value)
+        dynamic = img.get("data-a-dynamic-image")
+        if dynamic:
+            try:
+                sources.extend(json.loads(dynamic).keys())
+            except Exception:
+                pass
+    for element in doc.xpath(".//*[@style]"):
+        sources.extend(re.findall(r"url\(\s*['\"]?([^'\"()]+)['\"]?\s*\)", element.get("style") or ""))
+    for element in doc.xpath(".//*[@data-src or @data-zoom-image or @data-large or @data-full or "
+                              "@data-original or @data-lazy or @data-lazy-src or @data-image or "
+                              "@data-img or @data-bg]"):
+        for attr in ("data-src", "data-zoom-image", "data-large", "data-full", "data-original",
+                     "data-lazy", "data-lazy-src", "data-image", "data-img", "data-bg"):
+            value = (element.get(attr) or "").strip()
+            if value and len(value) < 300:
+                sources.append(value)
+                break
+    return sources
+
+
+def BestImage(root, pageURL, title=None):
+    """The main product image of a page region.
+
+    Candidate images are collected from <img> tags, from inline CSS
+    background-image declarations (many galleries lazy-load images through
+    backgrounds, e.g. n11) and from data-* attributes holding image URLs.
+    Each candidate is scored by:
+      - words of the element and its closest containers (main/zoom words win,
+        thumbnail/logo words lose),
+      - how well its alt/aria-label text matches the product title,
+      - its displayed size (large images win, tiny ones lose),
+      - its position (images inside headers/footers/menus or "related"
+        containers lose - store logos live there).
+    Returns the absolute URL of the best candidate, or None."""
     best, bestScore = None, -99
+    titleRuns = RA.NormalizeRuns(title) if title else []
+
+    candidates = []
+
     for img in root.xpath(".//img"):
         src = None
-        for attr in ("data-old-hires", "data-zoom-image", "data-large", "data-full", "data-src", "data-original",
-                     "data-lazy", "data-lazy-src", "src"):
-            value = (img.get(attr) or "").strip()
-            if value and not value.startswith("data:"):
-                src = value
-                break
+
+        # Amazon: data-a-dynamic-image is a JSON map of url -> [width, height];
+        # the largest entry is the best-quality product image
+        dynamic = img.get("data-a-dynamic-image")
+        if dynamic:
+            try:
+                entries = json.loads(dynamic)
+                src = max(entries, key=lambda url: int(entries[url][0]) if isinstance(entries[url], list) else 0)
+            except Exception:
+                src = None
+
+        if not src:
+            for attr in ("data-old-hires", "data-zoom-image", "data-large", "data-full", "data-src", "data-original",
+                         "data-lazy", "data-lazy-src", "src"):
+                value = (img.get(attr) or "").strip()
+                if value and not value.startswith("data:"):
+                    src = value
+                    break
         if not src and img.get("srcset"):
             src = img.get("srcset").split(",")[-1].strip().split(" ")[0]
-        if not src or re.search(r"logo|icon|sprite|badge|placeholder|blank\.|spacer|transparent|loading|flag|"
-                                r"payment|avatar|\.svg", src, re.I):
+        if src:
+            candidates.append((img, src))
+
+    # galleries that lazy-load through CSS backgrounds instead of <img> tags
+    for element in root.xpath(".//*[@style]"):
+        style = element.get("style") or ""
+        for url in re.findall(r"url\(\s*['\"]?([^'\"()]+)['\"]?\s*\)", style):
+            candidates.append((element, url))
+
+    # galleries that keep image URLs in data-* attributes on divs (a fixed
+    # list of attribute names keeps this scan fast)
+    for element in root.xpath(".//*[@data-src or @data-zoom-image or @data-large or @data-full or "
+                              "@data-original or @data-lazy or @data-lazy-src or @data-image or "
+                              "@data-img or @data-bg]"):
+        for attr in ("data-src", "data-zoom-image", "data-large", "data-full", "data-original",
+                     "data-lazy", "data-lazy-src", "data-image", "data-img", "data-bg"):
+            value = (element.get(attr) or "").strip()
+            if value and len(value) < 300 and \
+                    re.search(r"\.(?:jpe?g|png|webp|avif)(?:\?|#|$)", value, re.I):
+                candidates.append((element, value))
+                break  # one image attribute per element is enough
+
+    for element, rawSrc in candidates:
+        src = rawSrc.strip()
+        if not src or src.startswith("data:") or RE.LOGO_IMAGE_RE.search(src):
             continue
-        words = set()  # the image's own names, short data-* values, and its 3 closest containers
-        for k, v in img.attrib.items():
+
+        words = set()  # the element's own names, short data-* values, and its 3 closest containers
+        for k, v in element.attrib.items():
             if k.startswith("data-") and v and len(v) < 60 and "/" not in v:
                 words |= {t for t in re.split(r"[\W_]+", RE.CAMEL_RE.sub(r"\1 \2", v).lower()) if t}
-        for node in [img] + list(img.iterancestors())[:3]:
+        ancestors = list(element.iterancestors())
+        for node in [element] + ancestors[:3]:
             words |= HO.ExtractSemantic(node)
-        small = any(re.fullmatch(r"\d{1,2}|100", (img.get(a) or "").strip().replace("px", "")) for a in ("width", "height"))
+
+        # a store logo lives in the header/footer/menus, and related-product
+        # images live in "related/recommended" containers
+        noise = any(node.tag in ("header", "footer", "nav") or
+                    HO.ExtractSemantic(node) & SC.NOISE_WORDS for node in ancestors[:6])
+
+        dimensions = [int(n) for attr in ("width", "height")
+                      for n in re.findall(r"\d+", (element.get(attr) or ""))]
+        small = any(re.fullmatch(r"\d{1,2}|100", n) for n in (element.get(a) or "" for a in ("width", "height"))
+                    if n) or bool(dimensions and all(dim <= 100 for dim in dimensions))
+        large = any(dim >= 300 for dim in dimensions)
+
+        # the product image's alt text almost always describes the product,
+        # while a logo's alt is the store name
+        altSimilarity = 0.0
+        if titleRuns:
+            altRuns = RA.NormalizeRuns(element.get("alt") or element.get("aria-label") or element.get("title") or "")
+            if altRuns:
+                altSimilarity = sum(1 for run in titleRuns if run in altRuns) / len(titleRuns)
+
         score = 3 * bool(words & SC.MAIN_IMAGE_WORDS) + \
-            2 * any(img.get(a) for a in ("data-old-hires", "data-zoom-image", "data-large", "data-full")) - \
-            3 * bool(words & SC.THUMB_IMAGE_WORDS) - 2 * small
+            2 * any(element.get(a) for a in ("data-old-hires", "data-zoom-image", "data-large", "data-full")) + \
+            6 * altSimilarity + \
+            2 * large - \
+            3 * bool(words & SC.THUMB_IMAGE_WORDS) - \
+            2 * small - \
+            4 * noise
+
         if score > bestScore:
             best, bestScore = urljoin(pageURL, src), score
-    return best
+
+    # never return a logo/icon just because it is the only image on the page -
+    # "No image" is better than the store logo
+    return best if bestScore >= 0 else None
 
 
 def DOMProduct(doc, pageURL):
@@ -870,10 +996,15 @@ def DOMProduct(doc, pageURL):
 
         holder = region
         for _ in range(3):  # Expand search upwards as image galleries are frequently siblings of the title/price block
-            data["imageURL"] = BestImage(holder, pageURL)
+            data["imageURL"] = BestImage(holder, pageURL, data["productName"] or None)
             if data["imageURL"] or holder.getparent() is None or holder.getparent().tag in ("body", "html"):
                 break
             holder = holder.getparent()
+
+        # last resort: search the whole page - galleries are sometimes far
+        # away from the title block (e.g. n11 loads them in a lazy container)
+        if not data["imageURL"] and holder is not body:
+            data["imageURL"] = BestImage(body, pageURL, data["productName"] or None)
 
     return data
 
@@ -959,28 +1090,84 @@ def ExtractProductPage(html, pageURL, captured=()):
     canonical = doc.xpath('//link[translate(@rel,"CANONICAL","canonical")="canonical"]/@href')
     keys = {UO.CleanSortURL(pageURL)} | ({UO.CleanSortURL(urljoin(pageURL, canonical[0]))} if canonical else set())
     products = SchemaProducts(doc)
+
+    # Prefer schema blocks whose image is a real product image - n11 and
+    # similar stores embed related products and their own logo as additional
+    # schema blocks, and picking one of those gave a logo or a wrong photo.
+    def HasGoodImage(product):
+        image = product.get("image")
+        image = image[0] if isinstance(image, list) and image else image
+        return not (isinstance(image, str) and RE.LOGO_IMAGE_RE.search(image))
+
+    selectable = [n for n in products if HasGoodImage(n)] or products
+
+    # prefer the schema block whose name matches the page title - n11 and
+    # similar stores embed related products as extra schema blocks, and
+    # without this check a kılıf page could get the tablet's photo
+    pageTitleText = SO.Clean(doc.findtext(".//title")) or ""
+    titleRuns = RA.NormalizeRuns(pageTitleText)
+
+    def NameOverlap(product):
+        nameRuns = RA.NormalizeRuns(product.get("name") or "")
+        if not titleRuns or not nameRuns:
+            return 0.0
+        return sum(1 for run in nameRuns if run in titleRuns) / len(nameRuns)
+
     node = next(
-        (n for n in products if isinstance(n.get("url"), str) and UO.CleanSortURL(urljoin(pageURL, n["url"])) in keys),
-        None) or next((n for n in products if SchemaPrice(n)), None) or (products[0] if products else None)
+        (n for n in selectable if isinstance(n.get("url"), str) and UO.CleanSortURL(urljoin(pageURL, n["url"])) in keys),
+        None) or next((n for n in selectable if SchemaPrice(n) and NameOverlap(n) > 0.5), None) \
+        or max(selectable, key=NameOverlap, default=None)
 
     empty = {"productName": None, "imageURL": None, "price": None, "rating": None, "ratingAmount": None, "reviews": []}
     data = FromSchema(node, pageURL) if node else empty
 
+    # n11 and similar stores sometimes put their LOGO into the schema image
+    # (n11scdn.../a1/org/...). Never trust a logo-looking schema image - let
+    # the DOM heuristics find the real product photo instead.
+    if data["imageURL"] and RE.LOGO_IMAGE_RE.search(data["imageURL"]):
+        data["imageURL"] = None
+
+    # The schema image is only trustworthy when the page actually displays
+    # it. n11 accessories carry the TABLET's photo in their own schema while
+    # the visible gallery shows the real product - in that case the visible
+    # gallery image wins.
+    domImageNeeded = any(data[k] in (None, "") for k in ("productName", "price", "rating", "ratingAmount", "imageURL"))
+    displayed = set()
+    if data["imageURL"]:
+        displayed = {UO.CleanSortURL(src) for src in CollectImageSources(doc)}
+        if UO.CleanSortURL(data["imageURL"]) not in displayed:
+            domImageNeeded = True
+
     # Fill gaps using meta tags, then fallback to visible DOM heuristics
     if not data["imageURL"]:
-        data["imageURL"] = UO.FirstURL(metas.get("og:image") or metas.get("og:image:secure_url") or
-                                       metas.get("twitter:image"), pageURL)
+        metaImage = UO.FirstURL(metas.get("og:image") or metas.get("og:image:secure_url") or
+                                metas.get("twitter:image"), pageURL)
+        # n11 and similar stores put their LOGO into og:image - never trust a
+        # logo-looking meta image, let the DOM heuristics decide instead
+        if metaImage and not RE.LOGO_IMAGE_RE.search(metaImage):
+            data["imageURL"] = metaImage
     if not data["price"]:
         amount = metas.get("product:price:amount") or metas.get("og:price:amount") or metas.get(
             "product:sale_price:amount")
         currency = metas.get("product:price:currency") or metas.get("og:price:currency") or ""
         data["price"] = f"{SO.Clean(amount)} {SO.Clean(currency) or ''}".strip() if SO.Clean(amount) else None
 
-    if any(data[k] in (None, "") for k in ("productName", "price", "rating", "ratingAmount", "imageURL")):
+    if domImageNeeded:
         dom = DOMProduct(doc, pageURL)
         for key in ("productName", "price", "rating", "ratingAmount", "imageURL"):
             if data[key] in (None, ""):
                 data[key] = dom[key]
+        # prefer the visible gallery image over a schema image that the page
+        # never displays anywhere
+        if data["imageURL"] and dom.get("imageURL") and \
+                UO.CleanSortURL(data["imageURL"]) not in displayed and \
+                UO.CleanSortURL(data["imageURL"]) != UO.CleanSortURL(dom["imageURL"]):
+            data["imageURL"] = dom["imageURL"]
+
+    # final safety net: no matter which source produced it, a logo-shaped
+    # image is never a product image
+    if data["imageURL"] and RE.LOGO_IMAGE_RE.search(data["imageURL"]):
+        data["imageURL"] = None
 
     data["productName"] = data["productName"] or SO.Clean(metas.get("og:title"))
     data["pageTitle"] = SO.Clean(doc.findtext(".//title"))  # Fallback name (browser tab title)
