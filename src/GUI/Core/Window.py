@@ -97,7 +97,7 @@ class Window(QMainWindow):
 
         self.layout.addWidget(legendBox)
 
-        self.loading_hint = QLabel("Scraping the network, hold on this might take from 2 to 3 minutes...")
+        self.loading_hint = QLabel("Scraping the network, hold on this might take about 30 seconds...")
         self.loading_hint.setAlignment(Qt.AlignCenter)
         self.loading_hint.setStyleSheet("""
             QLabel {

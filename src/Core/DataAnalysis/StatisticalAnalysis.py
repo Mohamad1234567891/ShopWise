@@ -230,6 +230,15 @@ def AssignPoints(storeList):
     mainMedian = statistics.median(mainCluster)
     keepMin, keepMax = mainMedian * Settings.KEEP_MIN_FACTOR, mainMedian * Settings.KEEP_MAX_FACTOR
     parsedData = [(item, val) for item, val in parsedData if keepMin <= val <= keepMax]
+
+    # When a PERFECT name-match exists (relevance 1.0), anything that matches
+    # noticeably worse is a different model (MatePad Pro 12.2, Air, ... for a
+    # "matepad 12x" search) - drop it entirely instead of showing it among
+    # the results. Searches without a perfect match keep the relaxed behavior.
+    bestRel = max((item.get("relevance", 0.6) for item, _ in parsedData), default=0.6)
+    if bestRel >= 1.0:
+      parsedData = [(item, val) for item, val in parsedData if item.get("relevance", 0.6) >= bestRel - 0.2]
+
     # remove items that did not share the family's dominant word
     # (marked by DominantPriceCluster / KeepDominantSubgroup)
     parsedData = [(item, val) for item, val in parsedData if item.get("familyMember", True)]

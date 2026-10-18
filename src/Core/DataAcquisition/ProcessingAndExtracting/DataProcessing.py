@@ -7,7 +7,6 @@ from urllib.parse import urlparse, urljoin
 
 from src.Core import Settings
 from src.Core.DataAcquisition.ProcessingAndExtracting import ProductPage
-from src.Core.DataAnalysis import RelevanceAnalysis as RA
 
 from src.Constants import Constants
 from src.Constants import StringConstants as SC
@@ -80,8 +79,11 @@ async def ProcessProduct(fetcher, store, index, pdpURL, listingURL, progress):
         # ]
     """
     try:
-        # Prioritize new product requests behind active review loads to manage queue flow
-        page = await fetcher.get(pdpURL, referer=listingURL, renderOptions={"navigate": True, "openReviews": True}, priority=Constants.NEXT)
+        # Phase 1 fetches the product page and extracts its data. Reviews are
+        # NOT crawled here anymore - CollectReviewsForProduct runs later, only
+        # for the products that survived filtering, so irrelevant products
+        # never waste time on review crawling.
+        page = await fetcher.get(pdpURL, referer=listingURL, renderOptions={"navigate": True}, priority=Constants.NEXT)
 
         if not page["html"] or page["blocked"] or page["status"] >= 400:
             reason = page.get("error") or ("blocked by the store" if page["blocked"] else f"HTTP {page['status']}")
@@ -93,7 +95,7 @@ async def ProcessProduct(fetcher, store, index, pdpURL, listingURL, progress):
         # Fallback: If raw HTTP missed key attributes due to dynamic JS rendering, escalate to a browser fetch
         if page["via"] == "http" and not (data["price"] and (data["productName"] or data["pageTitle"])) and \
                 not fetcher.browserFailed:
-            rendered = await fetcher.FetchDataThroughBrowser(pdpURL, navigate=True, openReviews=True)
+            rendered = await fetcher.FetchDataThroughBrowser(pdpURL, navigate=True)
             if rendered["html"] and not rendered["blocked"]:
                 more = await TO.ParallelDispatch(ProductPage.ExtractProductPage, rendered["html"], rendered["url"], rendered["json"])
                 for key in ("productName", "price", "rating", "ratingAmount", "imageURL", "pageTitle"):
@@ -103,22 +105,6 @@ async def ProcessProduct(fetcher, store, index, pdpURL, listingURL, progress):
                 data["reviewLinks"] = data["reviewLinks"] or more["reviewLinks"]
                 page = rendered
 
-        # Products whose name clearly does not match the query will be
-        # filtered out later anyway, so their (expensive) review crawling is
-        # skipped here - this is what keeps flooded searches fast. The check
-        # runs only AFTER the browser fallback above, so the names it reads
-        # are the best ones we have.
-        query = store.get("query", "")
-        relevant = RA.ProductRelevance(query, data["productName"] or data["pageTitle"] or "") if query else 1.0
-
-        reviews = data["reviews"] if Settings.GET_REVIEWS else []
-        if relevant > 0 and Settings.GET_REVIEWS and Settings.MAX_REVIEW_PAGES != 0 and data["ratingAmount"] != 0:
-            try:
-                # Impose a strict time limit on review pagination; timeout is caught to preserve partial results
-                await asyncio.wait_for(MoreReviews(fetcher, store, pdpURL, page, data, reviews), Settings.PRODUCT_TIME_LIMIT)
-            except asyncio.TimeoutError:
-                pass
-
         productData = {
             "storeName": data["storeName"],
             "productName": data["productName"] or data["pageTitle"] or "N/A",
@@ -127,7 +113,10 @@ async def ProcessProduct(fetcher, store, index, pdpURL, listingURL, progress):
             "imageURL": data["imageURL"] or "N/A",
             "productURL": UO.CleanURL(page["url"]),
             "ratingAmount": data["ratingAmount"] if data["ratingAmount"] is not None else "N/A",
-            "reviews": list(reviews),
+            "reviews": list(data["reviews"]) if Settings.GET_REVIEWS else [],
+            # review context kept for the deferred review-crawling phase
+            "reviewLinks": data["reviewLinks"],
+            "ids": data["ids"],
         }
         store["results"].append((index, productData))
         progress["done"] += 1
@@ -136,15 +125,41 @@ async def ProcessProduct(fetcher, store, index, pdpURL, listingURL, progress):
             print(f"=== Processed Product {progress['done']}/{progress['total']} ({store['domain']}) ===")
             print(json.dumps(productData, indent=4, ensure_ascii=False))
             print("-" * 50)
-        #else:
-            #print(f"[{progress['done']}/{progress['total']}] {store['domain']}: {productData['price']} | "
-                  #f"{len(reviews)} reviews | {productData['productName'][:70]}")
 
     except Exception as e:
         if Settings.VERBOSE:
             print(f"  -> Error processing product page {pdpURL}: {type(e).__name__}: {e}")
         else:
             print("", end="")
+
+
+async def CollectReviewsForProduct(fetcher, store, product):
+    """Crawls the additional reviews of one product that survived filtering.
+
+    This is the deferred review phase: only the products the user will
+    actually see pay this cost, so the expensive review crawling never runs
+    for irrelevant products."""
+    if not Settings.GET_REVIEWS or Settings.MAX_REVIEW_PAGES == 0:
+        return
+    try:
+        ratingAmount = product.get("ratingAmount")
+        if ratingAmount in (None, "", "N/A", 0, "0"):
+            return
+
+        data = {
+            "reviewLinks": product.get("reviewLinks", []),
+            "ids": product.get("ids", {}),
+        }
+        reviews = list(product.get("reviews", []))
+        page = {"url": product.get("productURL", ""), "via": "http"}
+        try:
+            await asyncio.wait_for(MoreReviews(fetcher, store, product.get("productURL", ""), page, data, reviews),
+                                   Settings.PRODUCT_TIME_LIMIT)
+        except asyncio.TimeoutError:
+            pass
+        product["reviews"] = reviews
+    except Exception:
+        pass
 
 
 def ExtractMetaTags(doc):

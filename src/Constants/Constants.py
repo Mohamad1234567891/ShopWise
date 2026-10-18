@@ -109,7 +109,7 @@ STORES_BY_REGION = {
     # Asia
     "TR": [
         "trendyol.com", "hepsiburada.com", "n11.com",
-        "gittigidiyor.com", "pttavm.com", "mediamarkt.com.tr",
+        "pttavm.com", "mediamarkt.com.tr",
         "pamuka.com.tr", "amazon.com.tr"
     ],
     "JP": [
@@ -458,7 +458,6 @@ SEARCH_URL_TEMPLATES = {
     "trendyol.com": "https://www.trendyol.com/sr?q={query}",
     "hepsiburada.com": "https://www.hepsiburada.com/ara?q={query}",
     "n11.com": "https://www.n11.com/arama?q={query}",
-    "gittigidiyor.com": "https://www.gittigidiyor.com/arama/?k={query}",
     "pttavm.com": "https://www.pttavm.com/arama?q={query}",
     "mediamarkt.com.tr": "https://www.mediamarkt.com.tr/tr/search.html?query={query}",
     "pamuka.com.tr": "https://www.pamuka.com.tr/arama?q={query}",

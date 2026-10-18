@@ -13,6 +13,7 @@ from src.Core.DataAcquisition.ProcessingAndExtracting import ProductPage
 from src.Core.DataAcquisition.ProcessingAndExtracting import ProductReviewExtractor as PE
 
 from src.Core.DataAnalysis import RelevanceAnalysis as RA
+from src.Core.DataAnalysis import StatisticalAnalysis as SA
 
 
 async def ScrapeOneStore(fetcher, url, store, progress):
@@ -137,15 +138,15 @@ async def StartScraping(query):
     stats = {"http": 0, "browser": 0}
     products = []
 
-    print("[*] Scraping the network, hold on this might take from 2 to 3 minutes...")
+    print("[*] Scraping the network, hold on this might take about 30 seconds...")
 
     try:
         async with Fetcher() as fetcher:
-            # The watchdog: the whole scraping session must finish within
-            # SCRAPE_TIME_LIMIT. If anything gets stuck (a store, a browser
-            # call, a network request...), we stop waiting, print the stacks
-            # of the stuck tasks for diagnosis, and continue with the results
-            # collected so far - the app can never "load forever" again.
+            # Phase 1 - the watchdog: the whole scraping session must finish
+            # within SCRAPE_TIME_LIMIT. If anything gets stuck (a store, a
+            # browser call, a network request...), we stop waiting, print the
+            # stacks of the stuck tasks for diagnosis, and continue with the
+            # results collected so far - the app can never "load forever".
             gatherTask = asyncio.ensure_future(
                 asyncio.gather(*(ScrapeStore(fetcher, store["url"], store, progress) for store in stores)))
             doneTasks, pendingTasks = await asyncio.wait({gatherTask}, timeout=Settings.SCRAPE_TIME_LIMIT)
@@ -160,18 +161,40 @@ async def StartScraping(query):
                         task.print_stack()
 
             stats = fetcher.stats
+            products = GetResultsOfStores(stores)
+
+            # Drop products that clearly do not match the searched query
+            # (other models, unrelated listings). Accessories are still kept
+            # when the user actually searches for one - they only lose
+            # against the real product later, in the price-cluster logic of
+            # StatisticalAnalysis. Both the original and the translated query
+            # are used, so local product names match even when the user typed
+            # the query in another language.
+            products = RA.FilterProducts(products, query, (effectiveQuery,))
+
+            # Phase 2 - review crawling ONLY for the products that will
+            # actually be displayed. A pre-scoring pass (reviews still empty)
+            # applies the same price-cluster selection the final scoring uses,
+            # so irrelevant products never pay the expensive review cost.
+            displayed = SA.AssignPoints(products)
+            for item in displayed:
+                item.pop("points", None)  # the final scoring starts fresh, with reviews
+
+            storeByDomain = {store["domain"]: store for store in stores}
+            reviewTasks = []
+            for product in displayed:
+                store = storeByDomain.get(product.get("storeName"))
+                if store:
+                    reviewTasks.append(DP.CollectReviewsForProduct(fetcher, store, product))
+            if reviewTasks:
+                try:
+                    await asyncio.wait_for(asyncio.gather(*reviewTasks),
+                                           timeout=max(30, Settings.PRODUCT_TIME_LIMIT))
+                except asyncio.TimeoutError:
+                    pass  # partial reviews are better than none
     except (asyncio.CancelledError, KeyboardInterrupt):
         print("[!] Stopped by user (results collected so far were saved).")
     finally:
         TO.StopHelpers()
-        products = GetResultsOfStores(stores)
-
-    # Drop products that clearly do not match the searched query (other
-    # models, unrelated listings). Accessories are still kept when the user
-    # actually searches for one - they only lose against the real product
-    # later, in the price-cluster logic of StatisticalAnalysis. Both the
-    # original and the translated query are used, so local product names
-    # match even when the user typed the query in another language.
-    products = RA.FilterProducts(products, query, (effectiveQuery,))
 
     return products, stats
