@@ -1,3 +1,21 @@
+"""
+This file is part of ShopWise, an open-source multi-region, multi-store
+price-comparison and product-search engine.
+
+Copyright (c) 2026 Muhammed Bekiroğlu and the ShopWise contributors.
+
+Original ShopWise repository: https://github.com/Mohamad1234567891/ShopWise
+
+Muhammed Bekiroğlu (ShopWise team leader and top contributor) YouTube channel:
+    https://www.youtube.com/@ALShajaraComputerScienceInstit
+
+Licensed under the Mozilla Public License 2.0 with Additional Attribution
+Terms — see the LICENSE file.
+-------------------------------------------------------------------------------------------------------------------------------
+
+Runtime tunables and their defaults for the whole pipeline: products per store, review-page limits, per-store HTTP concurrency, browser tabs, timeouts, the session-wide watchdog and the price-cluster keep factors. UpdateSettings(...) applies CLI overrides without touching the defaults.
+"""
+
 # ================================================================ SETTINGS
 MAX_PRODUCTS = 30  # products per store (None = every product found on the listing page)
 MAX_SEARCH_RESULTS = 7  # Maximum Results From querying DuckDuckGo

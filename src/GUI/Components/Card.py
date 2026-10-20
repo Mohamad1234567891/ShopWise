@@ -1,3 +1,18 @@
+"""
+This file is part of ShopWise, an open-source multi-region, multi-store
+price-comparison and product-search engine.
+
+Copyright (c) 2026 Muhammed Bekiroğlu and the ShopWise contributors.
+
+Original ShopWise repository: https://github.com/Mohamad1234567891/ShopWise
+
+Muhammed Bekiroğlu (ShopWise team leader and top contributor) YouTube channel:
+    https://www.youtube.com/@ALShajaraComputerScienceInstit
+
+Licensed under the Mozilla Public License 2.0 with Additional Attribution
+Terms — see the LICENSE file.
+"""
+
 import webbrowser
 from PySide6.QtWidgets import (
     QApplication, QFrame, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
@@ -11,6 +26,7 @@ from src.Operations import StringOperations as SO
 
 
 class ProductCard(QFrame):
+    """Product card for the results grid: store, image, title, price, rating, review count, warning badges and a 'View Offer' button, themed with the color assigned by the scoring legend."""
     # One network manager shared by all cards (instead of one per card)
     _network_manager = None
 

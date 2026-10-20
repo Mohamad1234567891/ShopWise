@@ -1,3 +1,21 @@
+"""
+This file is part of ShopWise, an open-source multi-region, multi-store
+price-comparison and product-search engine.
+
+Copyright (c) 2026 Muhammed Bekiroğlu and the ShopWise contributors.
+
+Original ShopWise repository: https://github.com/Mohamad1234567891/ShopWise
+
+Muhammed Bekiroğlu (ShopWise team leader and top contributor) YouTube channel:
+    https://www.youtube.com/@ALShajaraComputerScienceInstit
+
+Licensed under the Mozilla Public License 2.0 with Additional Attribution
+Terms — see the LICENSE file.
+-------------------------------------------------------------------------------------------------------------------------------
+
+The fetching engine. Fetcher downloads pages with impersonated HTTP requests first and falls back to a headless Playwright browser when a store blocks plain HTTP; per-store and per-browser-tab concurrency is limited by slot managers, and SafeCall bounds every Playwright operation so a hung browser can never stall the run.
+"""
+
 import asyncio
 import sys
 import json

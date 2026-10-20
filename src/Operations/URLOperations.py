@@ -1,3 +1,21 @@
+"""
+This file is part of ShopWise, an open-source multi-region, multi-store
+price-comparison and product-search engine.
+
+Copyright (c) 2026 Muhammed Bekiroğlu and the ShopWise contributors.
+
+Original ShopWise repository: https://github.com/Mohamad1234567891/ShopWise
+
+Muhammed Bekiroğlu (ShopWise team leader and top contributor) YouTube channel:
+    https://www.youtube.com/@ALShajaraComputerScienceInstit
+
+Licensed under the Mozilla Public License 2.0 with Additional Attribution
+Terms — see the LICENSE file.
+-------------------------------------------------------------------------------------------------------------------------------
+
+URL cleaning and link intelligence. Strips tracking parameters, builds canonical comparable URLs (sorted query order), detects search-result URLs, extracts product IDs (url/sku/gtin), resolves the real store domain (including .com.tr-style domains) and picks the best product link from a set of anchors.
+"""
+
 import re
 
 from urllib.parse import urlparse, urlunparse, urlencode, parse_qsl, urljoin

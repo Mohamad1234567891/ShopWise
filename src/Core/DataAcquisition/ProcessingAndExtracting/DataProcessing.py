@@ -1,3 +1,21 @@
+"""
+This file is part of ShopWise, an open-source multi-region, multi-store
+price-comparison and product-search engine.
+
+Copyright (c) 2026 Muhammed Bekiroğlu and the ShopWise contributors.
+
+Original ShopWise repository: https://github.com/Mohamad1234567891/ShopWise
+
+Muhammed Bekiroğlu (ShopWise team leader and top contributor) YouTube channel:
+    https://www.youtube.com/@ALShajaraComputerScienceInstit
+
+Licensed under the Mozilla Public License 2.0 with Additional Attribution
+Terms — see the LICENSE file.
+-------------------------------------------------------------------------------------------------------------------------------
+
+Extraction heuristics for store pages. Turns raw HTML and JSON into product fields: price candidates and word lists, visible text, review bodies from the DOM or embedded JSON, counters (total reviews...), meta tags and the phase-1 processing used by Scraper. It also collects the deferred reviews for the products that end up being displayed.
+"""
+
 import json
 import asyncio
 import re

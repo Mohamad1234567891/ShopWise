@@ -1,3 +1,21 @@
+"""
+This file is part of ShopWise, an open-source multi-region, multi-store
+price-comparison and product-search engine.
+
+Copyright (c) 2026 Muhammed Bekiroğlu and the ShopWise contributors.
+
+Original ShopWise repository: https://github.com/Mohamad1234567891/ShopWise
+
+Muhammed Bekiroğlu (ShopWise team leader and top contributor) YouTube channel:
+    https://www.youtube.com/@ALShajaraComputerScienceInstit
+
+Licensed under the Mozilla Public License 2.0 with Additional Attribution
+Terms — see the LICENSE file.
+-------------------------------------------------------------------------------------------------------------------------------
+
+Command-line entry point of ShopWise. Parses the arguments, applies them to the settings, runs the scraping pipeline for the searched product, scores and color-codes the results and hands them to CLIRenderer for display. Afterwards it offers an interactive loop to search for another product without restarting. Running 'python -m src.CLI GUI' starts the graphical interface instead.
+"""
+
 import asyncio
 import multiprocessing
 import time
@@ -56,4 +74,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("[!] Stopped by user (results collected so far were saved).")
+        print("[!] Stopped by user.")

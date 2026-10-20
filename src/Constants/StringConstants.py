@@ -1,3 +1,21 @@
+"""
+This file is part of ShopWise, an open-source multi-region, multi-store
+price-comparison and product-search engine.
+
+Copyright (c) 2026 Muhammed Bekiroğlu and the ShopWise contributors.
+
+Original ShopWise repository: https://github.com/Mohamad1234567891/ShopWise
+
+Muhammed Bekiroğlu (ShopWise team leader and top contributor) YouTube channel:
+    https://www.youtube.com/@ALShajaraComputerScienceInstit
+
+Licensed under the Mozilla Public License 2.0 with Additional Attribution
+Terms — see the LICENSE file.
+-------------------------------------------------------------------------------------------------------------------------------
+
+Multilingual semantic word sets used to understand unknown store pages. Defines the keys that identify names, prices, ratings, reviews, reviewers, dates and pagination inside HTML attributes or JSON, plus the review words (review, yorum, bewertung...) used to find reviews in every supported language.
+"""
+
 TOTAL_ITEM_KEYS = {"total", "totalcount", "total_count", "totalelements", "totalitems", "total_items", "totalresults",
                    "total_results", "totalreviews", "total_reviews", "reviewcount", "review_count", "numberofreviews",
                    "numfound", "totalhits"}

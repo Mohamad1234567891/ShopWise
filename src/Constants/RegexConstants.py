@@ -1,3 +1,21 @@
+"""
+This file is part of ShopWise, an open-source multi-region, multi-store
+price-comparison and product-search engine.
+
+Copyright (c) 2026 Muhammed Bekiroğlu and the ShopWise contributors.
+
+Original ShopWise repository: https://github.com/Mohamad1234567891/ShopWise
+
+Muhammed Bekiroğlu (ShopWise team leader and top contributor) YouTube channel:
+    https://www.youtube.com/@ALShajaraComputerScienceInstit
+
+Licensed under the Mozilla Public License 2.0 with Additional Attribution
+Terms — see the LICENSE file.
+-------------------------------------------------------------------------------------------------------------------------------
+
+Central regex library used across the scraping and analysis pipeline: numbers in international formats, tracking and analytics query parameters, camelCase splitting, 'show more' UI boilerplate in many languages, review links, pagination labels, JavaScript state assignments and junk path segments. Keeping every pattern here means the extraction rules stay in one auditable place.
+"""
+
 import re
 
 from src.Constants import StringConstants as SC

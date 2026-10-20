@@ -1,3 +1,21 @@
+"""
+This file is part of ShopWise, an open-source multi-region, multi-store
+price-comparison and product-search engine.
+
+Copyright (c) 2026 Muhammed Bekiroğlu and the ShopWise contributors.
+
+Original ShopWise repository: https://github.com/Mohamad1234567891/ShopWise
+
+Muhammed Bekiroğlu (ShopWise team leader and top contributor) YouTube channel:
+    https://www.youtube.com/@ALShajaraComputerScienceInstit
+
+Licensed under the Mozilla Public License 2.0 with Additional Attribution
+Terms — see the LICENSE file.
+-------------------------------------------------------------------------------------------------------------------------------
+
+Central store and region configuration. Maps every supported region to its store domains (STORES_BY_REGION) and pairs each store with its search-page URL template (SEARCH_URL_TEMPLATES), so a product query can be turned into store search links without store-specific code. Also holds the region languages, unit tables, priority constants and the color legend shared by the CLI and the GUI.
+"""
+
 NOW, NEXT = 0, 1  # priorities: work for products already started goes before opening new product pages
 
 STORES_BY_REGION = {

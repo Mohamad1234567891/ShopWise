@@ -1,3 +1,21 @@
+"""
+This file is part of ShopWise, an open-source multi-region, multi-store
+price-comparison and product-search engine.
+
+Copyright (c) 2026 Muhammed Bekiroğlu and the ShopWise contributors.
+
+Original ShopWise repository: https://github.com/Mohamad1234567891/ShopWise
+
+Muhammed Bekiroğlu (ShopWise team leader and top contributor) YouTube channel:
+    https://www.youtube.com/@ALShajaraComputerScienceInstit
+
+Licensed under the Mozilla Public License 2.0 with Additional Attribution
+Terms — see the LICENSE file.
+-------------------------------------------------------------------------------------------------------------------------------
+
+Price-based scoring, ranking and color-coding. Builds price clusters and keeps the dominant subgroup, scores every product with the Wilson lower bound of its rating divided by its relative price, subtracts a review-sentiment penalty, and assigns each result the row color used by the CLI and the GUI.
+"""
+
 import math
 import statistics
 import re
@@ -6,10 +24,6 @@ from src.Core import Settings
 from src.Core.DataAnalysis import RelevanceAnalysis as RA
 from src.Core.DataAnalysis import SentimentAnalysis as SA
 from src.Core.DataAnalysis import Translator as T
-
-# Keep your existing imports for these two modules, for example:
-# import Translator as T
-# import SentimentAnalyzer as SA
 
 
 def HasValidPrice(item):

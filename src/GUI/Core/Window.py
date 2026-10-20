@@ -1,3 +1,18 @@
+"""
+This file is part of ShopWise, an open-source multi-region, multi-store
+price-comparison and product-search engine.
+
+Copyright (c) 2026 Muhammed Bekiroğlu and the ShopWise contributors.
+
+Original ShopWise repository: https://github.com/Mohamad1234567891/ShopWise
+
+Muhammed Bekiroğlu (ShopWise team leader and top contributor) YouTube channel:
+    https://www.youtube.com/@ALShajaraComputerScienceInstit
+
+Licensed under the Mozilla Public License 2.0 with Additional Attribution
+Terms — see the LICENSE file.
+"""
+
 import sys
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
@@ -15,6 +30,7 @@ from src.GUI.Core import GUISrapeWorker as GSW
 from src.GUI.Components.EmojiIcon import EmojiIcon
 
 class Window(QMainWindow):
+    """Main ShopWise window: search bar, color-legend box, loading hint and the scrollable product-card grid; launches a background ScrapeWorker per search and renders the results as cards."""
     def __init__(self):
         super().__init__()
         self.worker = None

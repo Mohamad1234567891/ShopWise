@@ -1,3 +1,21 @@
+"""
+This file is part of ShopWise, an open-source multi-region, multi-store
+price-comparison and product-search engine.
+
+Copyright (c) 2026 Muhammed Bekiroğlu and the ShopWise contributors.
+
+Original ShopWise repository: https://github.com/Mohamad1234567891/ShopWise
+
+Muhammed Bekiroğlu (ShopWise team leader and top contributor) YouTube channel:
+    https://www.youtube.com/@ALShajaraComputerScienceInstit
+
+Licensed under the Mozilla Public License 2.0 with Additional Attribution
+Terms — see the LICENSE file.
+-------------------------------------------------------------------------------------------------------------------------------
+
+Review sentiment scoring. Preprocesses review text with NLTK (lowercase, tokenize, stopwords) and classifies each review with VADER plus ShopWise's severity phrase lists into: positive (0), neutral (1), mildly negative (2) or severely negative (3). The severity feeds the value scoring in StatisticalAnalysis.
+"""
+
 import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
@@ -42,7 +60,6 @@ def analyze_sentiment(text):
         return None
 
 
-# New feature: classify product reviews by negative severity.
 SEVERE_NEGATIVE_PHRASES = (
     "broken", "doesn't work", "does not work", "not working",
     "stopped working", "unusable", "defective", "damaged",

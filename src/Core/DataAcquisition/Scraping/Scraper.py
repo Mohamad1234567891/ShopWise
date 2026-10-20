@@ -1,3 +1,21 @@
+"""
+This file is part of ShopWise, an open-source multi-region, multi-store
+price-comparison and product-search engine.
+
+Copyright (c) 2026 Muhammed Bekiroğlu and the ShopWise contributors.
+
+Original ShopWise repository: https://github.com/Mohamad1234567891/ShopWise
+
+Muhammed Bekiroğlu (ShopWise team leader and top contributor) YouTube channel:
+    https://www.youtube.com/@ALShajaraComputerScienceInstit
+
+Licensed under the Mozilla Public License 2.0 with Additional Attribution
+Terms — see the LICENSE file.
+-------------------------------------------------------------------------------------------------------------------------------
+
+The scraping pipeline shared by the CLI and the GUI. Runs every regional store search concurrently (HTTP first, browser fallback), filters irrelevant results by query relevance, pre-scores the survivors for value, then fetches reviews only for the products that will actually be displayed. Returns the final product list and session statistics.
+"""
+
 import asyncio
 
 from src.Core import Settings

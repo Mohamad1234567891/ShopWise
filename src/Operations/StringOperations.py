@@ -1,3 +1,21 @@
+"""
+This file is part of ShopWise, an open-source multi-region, multi-store
+price-comparison and product-search engine.
+
+Copyright (c) 2026 Muhammed Bekiroğlu and the ShopWise contributors.
+
+Original ShopWise repository: https://github.com/Mohamad1234567891/ShopWise
+
+Muhammed Bekiroğlu (ShopWise team leader and top contributor) YouTube channel:
+    https://www.youtube.com/@ALShajaraComputerScienceInstit
+
+Licensed under the Mozilla Public License 2.0 with Additional Attribution
+Terms — see the LICENSE file.
+-------------------------------------------------------------------------------------------------------------------------------
+
+Text cleaning, numbers, names and reviews. The workhorse string utilities: HTML-entity and invisible-character cleaning, international number parsing (1.234,50 / 1,234.50 / Arabic-Indic digits), count suffixes (1.2K), review merging and review extraction from JSON, plus the class/id tokenization that identifies review cards, lists and bodies on unknown store pages.
+"""
+
 import re
 import unicodedata
 
@@ -44,18 +62,19 @@ def Clean(value):
         return Clean(value.get("name") or value.get("@value") or value.get("value"))
 
 
-    """final cleaning of the text:
-       r"\s+": a regex pattern to detect any spaces, tabs, new lines
-       unescape(str(value)): converting any encoded html text back to its decoded form
-                             Examples:
-                                 &amp; -> &
-                                 &quot; -> "
-                                 &#x27; -> '
-                                 etc.
-                                 
-       replace("​", "") and replace("﻿", "")): those are invisible characters, usually websites use them to trick pattern matching like regex, so we try to get rid of them.
-       
-       note the replace("​", "") and the replace("​", "") looks empty but they have the replace("ZWSP", "") and the replace("ZWNBSP", "") characters inside them."""
+       #final cleaning of the text:
+       #r"\s+": a regex pattern thad detects any spaces, tabs, new lines
+       #unescape(str(value)): converting any encoded html text back to its decoded form
+       #                      Examples:
+       #                          &amp; -> &
+       #                          &quot; -> "
+       #                          &#x27; -> '
+       #                          etc.
+       #
+       #replace("​", "") and replace("﻿", "")): those are invisible characters, usually websites use them to trick pattern matching like regex, so we try to get rid of them.
+       #
+       #note the replace("​", "") and the replace("​", "") looks empty but they have the replace("ZWSP", "") and the replace("ZWNBSP", "") characters inside them.
+
     text = re.sub(r"\s+", " ", unescape(str(value)).replace("​", "").replace("﻿", "")).strip()
 
     return text or None
@@ -262,7 +281,7 @@ def GetReviewsFromJSONIfAny(data):
             review = next((keys[k] for k in SC.STRONG_TEXT_KEYS if isinstance(keys.get(k), str) and keys[k].strip()), None)
 
         if review is None and (person or (rating and date)):
-            # Same Idea of the line inside the previous if statement, but checking for WEAK_TEXT_KEYS instead of WEAK_TEXT_KEYS
+            # Same idea as the previous check, but using WEAK_TEXT_KEYS instead of STRONG_TEXT_KEYS
             review = next((keys[k] for k in SC.WEAK_TEXT_KEYS if isinstance(keys.get(k), str) and keys[k].strip()), None)
 
         # Filtering out any left over html tags, after filtering the tags out if review is still not empty we set it to its value without the tags otherwise we set it to None

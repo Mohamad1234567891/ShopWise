@@ -27,7 +27,7 @@ ShopWise is a cross-store product comparison engine that finds a product on the 
 - [How Products Are Scored](#how-products-are-scored)
 - [Supported Regions & Stores](#supported-regions--stores)
 - [Team](#team)
-- [Disclaimer](#disclaimer)
+- [License](#license)
 
 ---
 
@@ -158,6 +158,7 @@ ShopWise/
 │   └── products.json                       # Sample exported search results
 ├── Setup.py                                # One-command, cross-platform setup script
 ├── requirements.txt                        # Python dependencies
+├── LICENSE                                 # MPL-2.0 + Additional Attribution Terms
 ├── .gitignore
 └── README.md
 ```
@@ -472,3 +473,17 @@ The complete mapping lives in [`src/Constants/Constants.py`](src/Constants/Const
 | **Bashir Alzoubi** | Presentation animations |
 
 Individual, detailed contribution reports are available in the [`contributions/`](contributions/) directory.
+
+---
+
+## License
+
+ShopWise is licensed under the **Mozilla Public License 2.0** together with the **Additional Attribution Terms** set out in the [`LICENSE`](LICENSE) file. In short: you may use, modify, and distribute ShopWise — including in commercial products — but changes to ShopWise's own files must be shared under the same license, and any software built on ShopWise must display the following credit:
+
+> **Built on the open-source ShopWise project — Copyright (c) 2026 Muhammed Bekiroğlu and the ShopWise contributors.**
+>
+> **Original ShopWise repository:** [https://github.com/Mohamad1234567891/ShopWise](https://github.com/Mohamad1234567891/ShopWise)
+>
+> **Muhammed Bekiroğlu (ShopWise team leader and top contributor) YouTube channel:** [https://www.youtube.com/@ALShajaraComputerScienceInstit](https://www.youtube.com/@ALShajaraComputerScienceInstit)
+
+See the [`LICENSE`](LICENSE) file for the full terms, including where these credits must appear (every README/documentation file, a credits or about screen in GUIs, and on every run of CLI applications) and how they apply to modified ShopWise files.
