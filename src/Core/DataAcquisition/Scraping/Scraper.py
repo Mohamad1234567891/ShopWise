@@ -94,7 +94,7 @@ async def ScrapeOneStore(fetcher, url, store, progress):
     if Settings.VERBOSE:
         print(f"[+] {store['domain']}: detected {len(pdpLinks)} product pages. Scraping...")
 
-    if not pdpLinks:
+    if not pdpLinks and Settings.VERBOSE:
         print(f"[!] No product links found on {url}")
         return
 
