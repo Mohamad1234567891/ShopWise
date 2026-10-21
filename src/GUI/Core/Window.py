@@ -113,6 +113,24 @@ class Window(QMainWindow):
 
         self.layout.addWidget(legendBox)
 
+        # No-results message - sits right under the color legend and shows
+        # in yellow when a search ends with zero products.
+        self.noResultsLabel = QLabel("No products was found")
+        self.noResultsLabel.setAlignment(Qt.AlignCenter)
+        self.noResultsLabel.setStyleSheet("""
+            QLabel {
+                color: #ca8a04;
+                font-size: 14px;
+                font-weight: 600;
+                letter-spacing: 0.3px;
+                background: transparent;
+                padding-top: 2px;
+            }
+        """)
+
+        self.noResultsLabel.hide()
+        self.layout.addWidget(self.noResultsLabel)
+
         self.loading_hint = QLabel("Scraping the network, hold on this might take about 30 seconds...")
         self.loading_hint.setAlignment(Qt.AlignCenter)
         self.loading_hint.setStyleSheet("""
@@ -138,6 +156,7 @@ class Window(QMainWindow):
             return                       # ignore a second search while one is running
 
         self.scroll_container.clear()
+        self.noResultsLabel.hide()
 
         self.loader.start()
         self.loading_hint.show()
@@ -149,6 +168,10 @@ class Window(QMainWindow):
         self.worker.start()
 
     def on_results(self, products, stats):
+        if not products:
+            self.noResultsLabel.show()
+            return
+
         for product in products:
             card = ProductCard(product["storeName"], product["productName"], product["imageURL"], product["price"], product["rating"], product["ratingAmount"], "view Offer", product["productURL"], product["color"])
             self.scroll_container.add_item(card)

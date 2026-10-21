@@ -73,10 +73,10 @@ def FormatCount(value):
 def DisplayOnCli(products):
     console = _make_console()
 
-    productFound = True
+    productsFound = True
     if not products:
         console.print("[yellow][!] No products was found.[/yellow]")
-        productFound = False
+        productsFound = False
     else:
         table = Table(
             title="ShopWise Results",
@@ -128,7 +128,7 @@ def DisplayOnCli(products):
 
     while True:
         choice = Prompt.ask(
-            "\nEnter a product number to open its store page (q to finish, s for a new search)" if productFound else "q to finish, s for a new message",
+            "\nEnter a product number to open its store page (q to finish, s for a new search)" if productsFound else "q to finish, s for a new search",
             default="",
             show_default=False,
             console=console,
@@ -138,7 +138,7 @@ def DisplayOnCli(products):
             return False
         elif choice.lower() == "s":
             return True
-        elif not productFound:
+        elif not productsFound:
             console.print("[red]Invalid input.[/red]")
             continue
 
