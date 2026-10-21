@@ -308,44 +308,46 @@ def AssignPoints(storeList):
   return storeList
 
 
-def SortAndColorStores(storeList):
-  if not storeList:
-    return []
+def AnalyzeResults(storeList):
+    storeList = AssignPoints(storeList)
+
+    if not storeList:
+        return []
 
   # Helper function to extract numerical price
-  def GetPriceVal(item):
-    priceStr = str(item.get("price", "0"))
-    match = re.search(r"[-+]?\d*\.\d+|\d+", priceStr)
-    return float(match.group()) if match else 0.0
+    def GetPriceVal(item):
+        priceStr = str(item.get("price", "0"))
+        match = re.search(r"[-+]?\d*\.\d+|\d+", priceStr)
+        return float(match.group()) if match else 0.0
 
   # Helper function to get points
-  def GetPoints(item):
-    return item.get("points", 0)
+    def GetPoints(item):
+        return item.get("points", 0)
 
-  items = list(storeList)
+    items = list(storeList)
 
-  # 1. Find the item with the most points (Gold) and the cheapest (Blue) -
-  #    every product is then ordered strictly by its points, so the cheapest
-  #    keeps the position its points earned instead of always being second.
-  goldItem = max(items, key=GetPoints)
-  cheapestItem = min(items, key=GetPriceVal)
+    # 1. Find the item with the most points (Gold) and the cheapest (Blue) -
+    #    every product is then ordered strictly by its points, so the cheapest
+    #    keeps the position its points earned instead of always being second.
+    goldItem = max(items, key=GetPoints)
+    cheapestItem = min(items, key=GetPriceVal)
 
-  # 2. Identify the 5 items with the least points (Red), tracked by id()
-  sortedByPointsAsc = sorted(items, key=GetPoints)
-  redIds = {id(it) for it in sortedByPointsAsc[:5]}
+    # 2. Identify the 5 items with the least points (Red), tracked by id()
+    sortedByPointsAsc = sorted(items, key=GetPoints)
+    redIds = {id(it) for it in sortedByPointsAsc[:5]}
 
-  # 3. Order everything strictly by points, best to worst
-  orderedList = sorted(items, key=GetPoints, reverse=True)
+    # 3. Order everything strictly by points, best to worst
+    orderedList = sorted(items, key=GetPoints, reverse=True)
 
-  # 4. Assign colors (Gold > Blue > Red > White)
-  for item in orderedList:
-    if item is goldItem:
-      item["color"] = "gold"
-    elif item is cheapestItem:
-      item["color"] = "blue"
-    elif id(item) in redIds:
-      item["color"] = "red"
-    else:
-      item["color"] = "white"
+    # 4. Assign colors (Gold > Blue > Red > White)
+    for item in orderedList:
+        if item is goldItem:
+            item["color"] = "gold"
+        elif item is cheapestItem:
+            item["color"] = "blue"
+        elif id(item) in redIds:
+            item["color"] = "red"
+        else:
+            item["color"] = "white"
 
-  return orderedList
+    return orderedList

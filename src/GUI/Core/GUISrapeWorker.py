@@ -32,7 +32,7 @@ class ScrapeWorker(QThread):
     def run(self):
         try:
             products, stats = asyncio.run(Scraper.StartScraping(self.query))
-            products = SA.SortAndColorStores(SA.AssignPoints(products))   # same as the CLI path
+            products = SA.AnalyzeResults(products)   # same as the CLI path
             self.finished_ok.emit(products, stats)
         except Exception as exc:
             self.failed.emit(repr(exc))

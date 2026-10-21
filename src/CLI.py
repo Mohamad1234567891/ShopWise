@@ -54,16 +54,15 @@ async def main():
         products, stats = await Scraper.StartScraping(args.productName if firstRun else input("Enter a product name: "))
         firstRun = False
 
-        givenPointsProducts = SA.SortAndColorStores(SA.AssignPoints(products))
+        productsAnalyzed = SA.AnalyzeResults(products)
 
-        if not givenPointsProducts:
-            print("[!] No products with a valid price were found.")
-            return
+        if not productsAnalyzed:
+            print("[!] No products was found.")
 
-        newSearch = CLIRenderer.DisplayOnCli(givenPointsProducts)
+        newSearch = CLIRenderer.DisplayOnCli(productsAnalyzed)
 
         if Settings.VERBOSE:
-            print(f"\n[*] Crawling session complete: {len(givenPointsProducts)} products in {time.perf_counter() - startTime:.1f}s "
+            print(f"\n[*] Crawling session complete: {len(productsAnalyzed)} products in {time.perf_counter() - startTime:.1f}s "
                   f"({stats['http']} fast requests, {stats['browser']} browser pages).")
 
 
