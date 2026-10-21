@@ -42,42 +42,42 @@ NOT_GIVEN = object()
 
 
 def UpdateSettings(
-    maxProducts=NOT_GIVEN,
-    maxSearchResults=NOT_GIVEN,
-    getReviews=NOT_GIVEN,
-    maxReviewPages=NOT_GIVEN,
-    httpPerStore=NOT_GIVEN,
-    browserTabs=NOT_GIVEN,
-    requestTimeout=NOT_GIVEN,
-    productTimeLimit=NOT_GIVEN,
-    verbose=NOT_GIVEN,
-    clusterGapFactor=NOT_GIVEN,
-    minFactor=NOT_GIVEN,
-    maxFactor=NOT_GIVEN,
+        maxProducts=NOT_GIVEN,
+        maxSearchResults=NOT_GIVEN,
+        getReviews=NOT_GIVEN,
+        maxReviewPages=NOT_GIVEN,
+        httpPerStore=NOT_GIVEN,
+        browserTabs=NOT_GIVEN,
+        requestTimeout=NOT_GIVEN,
+        productTimeLimit=NOT_GIVEN,
+        verbose=NOT_GIVEN,
+        clusterGapFactor=NOT_GIVEN,
+        minFactor=NOT_GIVEN,
+        maxFactor=NOT_GIVEN,
 ):
-  global MAX_PRODUCTS, MAX_SEARCH_RESULTS, GET_REVIEWS, MAX_REVIEW_PAGES, HTTP_PER_STORE, BROWSER_TABS, REQUEST_TIMEOUT, PRODUCT_TIME_LIMIT, VERBOSE, CLUSTER_GAP_FACTOR, KEEP_MIN_FACTOR, KEEP_MAX_FACTOR
+    global MAX_PRODUCTS, MAX_SEARCH_RESULTS, GET_REVIEWS, MAX_REVIEW_PAGES, HTTP_PER_STORE, BROWSER_TABS, REQUEST_TIMEOUT, PRODUCT_TIME_LIMIT, VERBOSE, CLUSTER_GAP_FACTOR, KEEP_MIN_FACTOR, KEEP_MAX_FACTOR
 
-  if maxProducts is not NOT_GIVEN and maxProducts:
-    MAX_PRODUCTS = maxProducts
-  if maxSearchResults is not NOT_GIVEN and maxSearchResults:
-    MAX_SEARCH_RESULTS = maxSearchResults
-  if getReviews is not NOT_GIVEN and getReviews:
-    GET_REVIEWS = getReviews
-  if maxReviewPages is not NOT_GIVEN and maxReviewPages:
-    MAX_REVIEW_PAGES = maxReviewPages
-  if httpPerStore is not NOT_GIVEN and httpPerStore:
-    HTTP_PER_STORE = httpPerStore
-  if browserTabs is not NOT_GIVEN and browserTabs:
-    BROWSER_TABS = browserTabs
-  if requestTimeout is not NOT_GIVEN and requestTimeout:
-    REQUEST_TIMEOUT = requestTimeout
-  if productTimeLimit is not NOT_GIVEN and productTimeLimit:
-    PRODUCT_TIME_LIMIT = productTimeLimit
-  if verbose is not NOT_GIVEN and verbose:
-    VERBOSE = verbose
-  if clusterGapFactor is not NOT_GIVEN and clusterGapFactor:
-    CLUSTER_GAP_FACTOR = clusterGapFactor
-  if minFactor is not NOT_GIVEN and minFactor:
-    KEEP_MIN_FACTOR = minFactor
-  if maxFactor is not NOT_GIVEN and maxFactor:
-    KEEP_MAX_FACTOR = maxFactor
+    if maxProducts is not NOT_GIVEN and maxProducts:
+        MAX_PRODUCTS = maxProducts
+    if maxSearchResults is not NOT_GIVEN and maxSearchResults:
+        MAX_SEARCH_RESULTS = maxSearchResults
+    if getReviews is not NOT_GIVEN and getReviews:
+        GET_REVIEWS = getReviews
+    if maxReviewPages is not NOT_GIVEN and maxReviewPages:
+        MAX_REVIEW_PAGES = maxReviewPages
+    if httpPerStore is not NOT_GIVEN and httpPerStore:
+        HTTP_PER_STORE = httpPerStore
+    if browserTabs is not NOT_GIVEN and browserTabs:
+        BROWSER_TABS = browserTabs
+    if requestTimeout is not NOT_GIVEN and requestTimeout:
+        REQUEST_TIMEOUT = requestTimeout
+    if productTimeLimit is not NOT_GIVEN and productTimeLimit:
+        PRODUCT_TIME_LIMIT = productTimeLimit
+    if verbose is not NOT_GIVEN and verbose:
+        VERBOSE = verbose
+    if clusterGapFactor is not NOT_GIVEN and clusterGapFactor:
+        CLUSTER_GAP_FACTOR = clusterGapFactor
+    if minFactor is not NOT_GIVEN and minFactor:
+        KEEP_MIN_FACTOR = minFactor
+    if maxFactor is not NOT_GIVEN and maxFactor:
+        KEEP_MAX_FACTOR = maxFactor

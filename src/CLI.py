@@ -56,9 +56,6 @@ async def main():
 
         productsAnalyzed = SA.AnalyzeResults(products)
 
-        if not productsAnalyzed:
-            print("[!] No products was found.")
-
         newSearch = CLIRenderer.DisplayOnCli(productsAnalyzed)
 
         if Settings.VERBOSE:

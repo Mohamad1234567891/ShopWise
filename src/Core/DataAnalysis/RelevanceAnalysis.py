@@ -161,9 +161,10 @@ def FilterProducts(products, query, alternateQueries=()):
 
     best = max(rel for rel, _ in scored)
     if best <= 0:
-        # nothing matches the query at all: we cannot tell right from wrong,
-        # so keep everything (never filter blindly)
-        return products
+        # Not one product matched a single word of the query, so no product
+        # can be the right one: there is nothing to show. Keeping everything
+        # here would let the price-cluster logic promote unrelated results.
+        return []
 
     cutoff = max(0.5, 0.7 * best)
     return [item for rel, item in scored if rel >= cutoff]

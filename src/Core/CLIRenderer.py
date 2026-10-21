@@ -73,61 +73,62 @@ def FormatCount(value):
 def DisplayOnCli(products):
     console = _make_console()
 
+    productFound = True
     if not products:
-        console.print("[yellow]No products to display.[/yellow]")
-        return
-
-    table = Table(
-        title="ShopWise Results",
-        box=box.ROUNDED,
-        header_style="bold cyan",
-        show_lines=True,
-    )
-    table.add_column("#", justify="right", style="dim", no_wrap=True)
-    table.add_column("Product Name", overflow="fold")
-    table.add_column("Rating", justify="center", no_wrap=True)
-    table.add_column("Rating Count", justify="right", no_wrap=True)
-    table.add_column("Store Name", overflow="fold")
-    table.add_column("Price", justify="right", no_wrap=True)
-
-    valid_urls = {}
-
-    for index, product in enumerate(products, start=1):
-        url = str(product.get("productURL", "")).strip()
-        rating = product.get("rating", product.get("reating"))
-
-        if _is_valid_url(url):
-            valid_urls[index] = url
-
-        table.add_row(
-            str(index),
-            str(product.get("productName", "-")),
-            str(rating) if rating not in (None, "") else "-",
-            FormatCount(product.get("ratingAmount")),
-            str(product.get("storeName", "-")),
-            _format_price(product.get("price")),
-            style=C.ROW_COLORS.get(str(product.get("color", "")).lower()),
+        console.print("[yellow][!] No products was found.[/yellow]")
+        productFound = False
+    else:
+        table = Table(
+            title="ShopWise Results",
+            box=box.ROUNDED,
+            header_style="bold cyan",
+            show_lines=True,
         )
+        table.add_column("#", justify="right", style="dim", no_wrap=True)
+        table.add_column("Product Name", overflow="fold")
+        table.add_column("Rating", justify="center", no_wrap=True)
+        table.add_column("Rating Count", justify="right", no_wrap=True)
+        table.add_column("Store Name", overflow="fold")
+        table.add_column("Price", justify="right", no_wrap=True)
 
-    console.print(table)
+        valid_urls = {}
 
-    if not console.is_terminal:
-        return
+        for index, product in enumerate(products, start=1):
+            url = str(product.get("productURL", "")).strip()
+            rating = product.get("rating", product.get("reating"))
 
-    # Printed once, before the interactive loop.
-    console.print()
-    console.print(
-        "[yellow]Our top products are listed first, with the best options usually found "
-        "in the top five. We recommend checking prices and reviews, as the fifth item "
-        "can sometimes outmatch the first; however, the top five will almost always "
-        "give you the best value.[/yellow]"
-    )
-    console.print(Panel(C.LEGEND_TEXT, title="Color Legend", border_style="dim", padding=(0, 2)))
-    console.print()
+            if _is_valid_url(url):
+                valid_urls[index] = url
+
+            table.add_row(
+                str(index),
+                str(product.get("productName", "-")),
+                str(rating) if rating not in (None, "") else "-",
+                FormatCount(product.get("ratingAmount")),
+                str(product.get("storeName", "-")),
+                _format_price(product.get("price")),
+                style=C.ROW_COLORS.get(str(product.get("color", "")).lower()),
+            )
+
+        console.print(table)
+
+        if not console.is_terminal:
+            return
+
+        # Printed once, before the interactive loop.
+        console.print()
+        console.print(
+            "[yellow]Our top products are listed first, with the best options usually found "
+            "in the top five. We recommend checking prices and reviews, as the fifth item "
+            "can sometimes outmatch the first; however, the top five will almost always "
+            "give you the best value.[/yellow]"
+        )
+        console.print(Panel(C.LEGEND_TEXT, title="Color Legend", border_style="dim", padding=(0, 2)))
+        console.print()
 
     while True:
         choice = Prompt.ask(
-            "\nEnter a product number to open its store page (q to finish, s for a new search)",
+            "\nEnter a product number to open its store page (q to finish, s for a new search)" if productFound else "q to finish, s for a new message",
             default="",
             show_default=False,
             console=console,
@@ -137,6 +138,9 @@ def DisplayOnCli(products):
             return False
         elif choice.lower() == "s":
             return True
+        elif not productFound:
+            console.print("[red]Invalid input.[/red]")
+            continue
 
         if not choice.isdigit() or int(choice) not in range(1, len(products) + 1):
             console.print("[red]Invalid input.[/red]")
